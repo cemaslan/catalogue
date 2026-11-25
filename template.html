@@ -859,7 +859,10 @@
       <div id="emptyState" class="empty-state" style="display: none;">
         <h2>No matching products found</h2>
         <p id="emptyMsg">Try fewer words, check the product code, or clear the category filter.</p>
-        <button type="button" id="resetFiltersBtn" class="btn-primary">Show all products</button>
+        <div class="load-more-wrap" style="margin-top: 0;">
+          <button type="button" id="searchAllCatsBtn" class="btn-primary" style="display: none;">Search all categories</button>
+          <button type="button" id="resetFiltersBtn" class="btn-secondary">Show all products</button>
+        </div>
       </div>
 
       <div id="loadMoreWrap" class="load-more-wrap" style="display: none;"></div>
@@ -881,6 +884,8 @@
     const PAGE_SIZE = 60;
     const SYNONYMS = [
       ['sds+', 'sds plus'],
+      ['sds-plus', 'sds plus'],
+      ['sds-max', 'sds max'],
       ['holesaw', 'hole saw'],
       ['wirebrush', 'wire brush'],
       ['sawblade', 'saw blade'],
@@ -893,17 +898,78 @@
       ['s/s', 'stainless steel'],
       ['ss', 'stainless steel'],
       ['alu', 'aluminium'],
-      ['aluminum', 'aluminium']
+      ['aluminum', 'aluminium'],
+      ['nickle', 'nickel'],
+      ['blabe', 'blade'],
+      ['vice', 'vise'],
+      ['adaptor', 'adapter'],
+      ['fiber', 'fibre']
     ];
+
+    // Hardware Decision Model: maps customer intent words -> product terms & boosted categories
+    const INTENT_RULES = {
+      concrete: { terms: ['concrete', 'sds', 'masonry', 'diamond', 'taper'], cats: ['SDS Drill Bits', 'Masonry Bits', 'Concrete Screws', 'Diamond Blades', 'Mushrooms'] },
+      masonry: { terms: ['masonry', 'sds', 'concrete', 'taper'], cats: ['Masonry Bits', 'SDS Drill Bits', 'Concrete Screws'] },
+      brick: { terms: ['masonry', 'sds', 'diamond', 'concrete'], cats: ['SDS Drill Bits', 'Masonry Bits', 'Diamond Blades'] },
+      block: { terms: ['masonry', 'sds', 'diamond', 'concrete'], cats: ['SDS Drill Bits', 'Masonry Bits', 'Diamond Blades'] },
+      stone: { terms: ['diamond', 'masonry', 'sds'], cats: ['Diamond Blades', 'Masonry Bits', 'SDS Drill Bits'] },
+      metal: { terms: ['hss', 'cobalt', 'mild steel', 'dry cut', 'metal', 'bimetal', 'rota broach', 'tct', 'stainless'], cats: ['HSS Drill Bits', 'Dry Cut Blades', 'Rota Broach Cutters', 'Hand Taps', 'Carbide Burr', 'Holesaws', 'TCT Holesaw'] },
+      steel: { terms: ['hss', 'cobalt', 'mild steel', 'dry cut', 'metal', 'bimetal', 'rota broach', 'stainless'], cats: ['HSS Drill Bits', 'Dry Cut Blades', 'Rota Broach Cutters', 'Hand Taps', 'Carbide Burr'] },
+      stainless: { terms: ['stainless', 's/s', 'cobalt', 'bimetal'], cats: ['HSS Drill Bits', 'Dry Cut Blades', 'Flap Wheels', 'Abrasives'] },
+      inox: { terms: ['stainless', 's/s', 'cobalt', 'bimetal'], cats: ['HSS Drill Bits', 'Dry Cut Blades', 'Flap Wheels', 'Abrasives'] },
+      wood: { terms: ['auger', 'wood', 'tct', 'planer', 'jigsaw', 'claw'], cats: ['Drill Bits', 'TCT Saw Blades', 'Planer Blades', 'Jigsaw Blades'] },
+      timber: { terms: ['auger', 'wood', 'tct', 'planer', 'jigsaw'], cats: ['Drill Bits', 'TCT Saw Blades', 'Planer Blades'] },
+      tile: { terms: ['tile', 'diamond', 'dtb'], cats: ['Tile Bits', 'Diamond Blades'] },
+      porcelain: { terms: ['tile', 'diamond', 'dtb'], cats: ['Tile Bits', 'Diamond Blades'] },
+      ceramic: { terms: ['tile', 'diamond', 'dtb'], cats: ['Tile Bits', 'Diamond Blades'] },
+      mag: { terms: ['rota broach', 'mag cutter', 'magnetic', 'broach'], cats: ['Rota Broach Cutters', 'Magnetic Bits'] },
+      magnetic: { terms: ['magnetic', 'rota broach', 'mag cutter', 'pozi'], cats: ['Rota Broach Cutters', 'Magnetic Bits'] },
+      drill: { terms: ['drill', 'bit', 'rota broach', 'cutter', 'holesaw', 'auger'], cats: ['SDS Drill Bits', 'HSS Drill Bits', 'Rota Broach Cutters', 'Drill Bits', 'Masonry Bits', 'Tile Bits', 'Step Drills'] },
+      broach: { terms: ['rota broach', 'broach', 'rbc'], cats: ['Rota Broach Cutters', 'Countersinks'] },
+      annular: { terms: ['rota broach', 'mag cutter'], cats: ['Rota Broach Cutters'] },
+      slugger: { terms: ['rota broach', 'mag cutter'], cats: ['Rota Broach Cutters'] },
+      grinder: { terms: ['grinder', 'backing pad', 'wire brush', 'flap', 'diamond', 'click nut', '115', '125', '230'], cats: ['Abrasives', 'Diamond Blades', 'Flap Wheels', 'Hand Tools', 'Carbon Brushes'] },
+      consaw: { terms: ['diamond', '300', '350', '400', 'blade'], cats: ['Diamond Blades'] },
+      saw: { terms: ['saw', 'blade', 'tct', 'nct', 'dry cut', 'diamond', 'cold saw', 'reciprocating', 'jigsaw', 'hacksaw'], cats: ['TCT Saw Blades', 'NCT Saw Blades', 'Dry Cut Blades', 'Diamond Blades', 'Jigsaw Blades', 'Reciprocating Saw Blades', 'Hacksaw Blades'] },
+      disc: { terms: ['blade', 'pad', 'wheel', 'sponge', 'bonnet', 'brush'], cats: ['Diamond Blades', 'TCT Saw Blades', 'Abrasives', 'Flap Wheels'] },
+      disk: { terms: ['blade', 'pad', 'wheel', 'sponge', 'bonnet', 'brush'], cats: ['Diamond Blades', 'TCT Saw Blades', 'Abrasives', 'Flap Wheels'] },
+      wheel: { terms: ['wheel', 'flap', 'pad', 'brush', 'blade'], cats: ['Flap Wheels', 'Abrasives'] },
+      holesaw: { terms: ['hole saw', 'holesaw', 'core', 'arbor'], cats: ['Holesaws', 'TCT Holesaw'] },
+      core: { terms: ['core', 'hole saw', 'holesaw', 'diamond'], cats: ['Holesaws', 'TCT Holesaw', 'Miscellaneous'] },
+      burr: { terms: ['burr', 'carbide burr'], cats: ['Carbide Burr'] },
+      bur: { terms: ['burr', 'carbide burr'], cats: ['Carbide Burr'] },
+      thread: { terms: ['tap', 'die', 'dies', 'tpi'], cats: ['Hand Taps'] },
+      screw: { terms: ['screw', 'screws', 'tek', 'concrete screw', 'pozi'], cats: ['Tek Screws', 'Concrete Screws', 'Magnetic Bits'] },
+      screws: { terms: ['screw', 'screws', 'tek', 'concrete screw'], cats: ['Tek Screws', 'Concrete Screws'] },
+      insulation: { terms: ['insulation anchor', 'mushroom'], cats: ['Mushrooms'] },
+      anchor: { terms: ['anchor', 'mushroom', 'concrete screw'], cats: ['Mushrooms', 'Concrete Screws'] },
+      battery: { terms: ['battery', 'adaptor', 'ni-mh', 'li-ion'], cats: ['Electrical'] },
+      charger: { terms: ['battery', 'adaptor'], cats: ['Electrical'] },
+      safety: { terms: ['mask', 'ear', 'safety', 'ffp3', 'pf2', 'specs'], cats: ['Safety Equipment'] },
+      ppe: { terms: ['mask', 'ear', 'safety', 'ffp3', 'pf2', 'specs'], cats: ['Safety Equipment'] },
+      mask: { terms: ['mask', 'ffp3', 'pf2'], cats: ['Safety Equipment'] },
+      ear: { terms: ['ear', 'muffs'], cats: ['Safety Equipment'] },
+      hex: { terms: ['allen', 'hex', 'ball end'], cats: ['Allen Keys'] },
+      allen: { terms: ['allen', 'hex', 'ball end'], cats: ['Allen Keys'] },
+      pozi: { terms: ['pozi', 'pz'], cats: ['Magnetic Bits'] },
+      pz2: { terms: ['pozi 2', 'pozi'], cats: ['Magnetic Bits'] }
+    };
+
+    const STOP_WORDS = new Set(['for', 'with', 'the', 'and', 'or', 'a', 'an', 'to', 'of', 'in', 'on', 'need', 'want', 'please', 'size']);
 
     const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
     function normalizeText(str) {
       let s = (str || '').toLowerCase();
       s = s.replace(/sds\s*\+/g, 'sds plus ');
-      // Separate X between numbers like 12x350 -> 12 x 350, 115x22.23 -> 115 x 22.23
-      s = s.replace(/(\d)\s*[x×*]\s*(\d)/gi, '$1 x $2');
-      // Add spaced forms for common joined/separated hardware terms
+      s = s.replace(/sds[\s-]+max/g, 'sds max');
+      s = s.replace(/sds[\s-]+plus/g, 'sds plus');
+      // Separate dimension connectors between numbers (even with mm), e.g. 12x600, 12mmx600mm, A06X18X6X70
+      let prev;
+      do {
+        prev = s;
+        s = s.replace(/(\d+(?:\.\d+)?)\s*(?:mm)?\s*[x×*]\s*(\d+(?:\.\d+)?)/gi, '$1 x $2');
+      } while (s !== prev);
       for (const [a, b] of SYNONYMS) {
         if (s.includes(a)) s += ' ' + b;
         if (s.includes(b)) s += ' ' + a;
@@ -913,6 +979,20 @@
 
     function compactCode(code) {
       return (code || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function extractNumbers(str) {
+      const nums = new Set();
+      const matches = (str || '').match(/\d+(?:\.\d+)?/g);
+      if (matches) {
+        for (const m of matches) {
+          nums.add(m);
+          if (!m.includes('.') && m.length > 1 && m.startsWith('0')) {
+            nums.add(String(Number(m)));
+          }
+        }
+      }
+      return nums;
     }
 
     // Build searchable index once on load (< 5ms for 1510 items)
@@ -927,11 +1007,12 @@
       const descLower = desc.toLowerCase();
       const catLower = cat.toLowerCase();
       const normDesc = normalizeText(desc + ' ' + cat);
-      // Extract pure number tokens for exact mm matching (e.g. "12 X 350MM" -> " 12 350 ")
       const cleanTokensStr = normDesc
         .replace(/(\d+(?:\.\d+)?)\s*mm\b/gi, '$1mm $1')
         .replace(/[^a-z0-9./+"-]+/g, ' ');
       const words = cleanTokensStr.trim().split(/\s+/).filter(Boolean);
+      const dimNums = extractNumbers(descLower + ' ' + codeLower);
+      const dimJoined = descLower.replace(/\s*[x×*]\s*/g, 'x').replace(/(\d)mmx/gi, '$1x');
 
       return {
         idx,
@@ -945,6 +1026,8 @@
         codeCompact: compactCode(code),
         descLower,
         catLower,
+        dimNums,
+        dimJoined,
         searchBlob: codeLower + ' ' + compactCode(code) + ' ' + cleanTokensStr,
         words
       };
@@ -995,6 +1078,7 @@
     const tableBody = document.getElementById('tableBody');
     const emptyState = document.getElementById('emptyState');
     const emptyMsg = document.getElementById('emptyMsg');
+    const searchAllCatsBtn = document.getElementById('searchAllCatsBtn');
     const resetFiltersBtn = document.getElementById('resetFiltersBtn');
     const loadMoreWrap = document.getElementById('loadMoreWrap');
     const fabTop = document.getElementById('fabTop');
@@ -1070,22 +1154,66 @@
       render();
     }
 
-    // Parse query into smart tokens
+    // Parse query into smart tokens + dimension pairs
     function parseQuery(raw) {
       let q = (raw || '').trim().toLowerCase();
-      if (!q) return { raw: '', tokens: [] };
+      if (!q) return { raw: '', tokens: [], dimPairs: [] };
+
       q = q.replace(/sds\s*\+/g, 'sds plus ');
-      // Split 12x350 or 12*350 into "12 350", keep decimals like 12.5 and fractions like 1/2
-      q = q.replace(/(\d)\s*[x×*]\s*(\d)/gi, '$1 $2');
-      const rawTokens = q.split(/\s+/).filter(Boolean);
-      const tokens = rawTokens.map((t) => {
+      q = q.replace(/sds[\s-]+max/g, 'sds max ');
+      q = q.replace(/sds[\s-]+plus/g, 'sds plus ');
+
+      const dimPairs = [];
+      // Detect explicit dimension expressions like 12x600, 12 x 600, 12mmx600mm, 12 by 600, 12-600
+      let expanded = q;
+      let prev;
+      do {
+        prev = expanded;
+        expanded = expanded.replace(
+          /(\d+(?:\.\d+)?)\s*(?:mm|"|in)?\s*(?:[x×*]|\bby\b)\s*(\d+(?:\.\d+)?)\s*(mm|"|in)?/gi,
+          (_, a, b, u2) => {
+            dimPairs.push([a, b]);
+            return ` ~dim:${a} ~dim:${b} ` + (u2 && u2 !== 'mm' ? '' : '');
+          }
+        );
+      } while (expanded !== prev);
+
+      // Also split pure numeric hyphen pairs like 12-600 or 12/600 (when not common small fractions like 5/16)
+      expanded = expanded.replace(/(?:^|\s)(\d{1,4})\s*[-]\s*(\d{2,4})(?=\s|$)/g, (_, a, b) => {
+        dimPairs.push([a, b]);
+        return ` ~dim:${a} ~dim:${b} `;
+      });
+
+      const rawTokens = expanded.split(/\s+/).filter(Boolean);
+      const tokens = [];
+      for (const t of rawTokens) {
+        if (t.startsWith('~dim:')) {
+          const num = t.slice(5);
+          tokens.push({ raw: num, exactDim: num, numOnly: num, compact: num, isNumeric: true });
+          continue;
+        }
         const mmMatch = t.match(/^(\d+(?:\.\d+)?)mm$/i);
         if (mmMatch) {
-          return { raw: t, numOnly: mmMatch[1], compact: t.replace(/[^a-z0-9]/g, '') };
+          tokens.push({ raw: t, exactDim: mmMatch[1], numOnly: mmMatch[1], compact: mmMatch[1], isNumeric: true });
+          continue;
         }
-        return { raw: t, numOnly: null, compact: t.replace(/[^a-z0-9]/g, '') };
-      });
-      return { raw: raw.trim().toLowerCase(), tokens };
+        if (/^\d+(?:\.\d+)?$/.test(t)) {
+          tokens.push({ raw: t, exactDim: null, numOnly: t, compact: t, isNumeric: true });
+          continue;
+        }
+        tokens.push({
+          raw: t,
+          exactDim: null,
+          numOnly: null,
+          compact: t.replace(/[^a-z0-9]/g, ''),
+          isNumeric: false
+        });
+      }
+
+      // Drop harmless English filler words if other meaningful tokens exist
+      const meaningful = tokens.filter((t) => !STOP_WORDS.has(t.raw));
+      const finalTokens = meaningful.length > 0 ? meaningful : tokens;
+      return { raw: q, tokens: finalTokens, dimPairs };
     }
 
     function escapeRegExp(s) {
@@ -1100,19 +1228,46 @@
         .replace(/"/g, '&quot;');
     }
 
-    function tokenMatchesProduct(tok, p) {
-      if (tok.numOnly) {
-        // Match "12mm" OR standalone number "12" (e.g. "12 X 350MM") so 12mm does not match 125mm
-        const re = new RegExp(`(?:^|[^0-9.])${escapeRegExp(tok.numOnly)}(?:\\s*mm|[^0-9.]|$)`, 'i');
-        return re.test(p.descLower) || re.test(p.codeLower);
+    function tokenMatchesProduct(tok, p, allowIntent = true) {
+      // Exact dimension match (from 12x600, 12 x 600, 12mm, 12-600) -> never matches 120 when searching 12
+      if (tok.exactDim) {
+        if (p.dimNums.has(tok.exactDim)) return true;
+        // Also allow e.g. "12" matching "12.0"
+        if (tok.exactDim.includes('.') && p.descLower.includes(tok.exactDim)) return true;
+        return false;
       }
+
+      // Barcode match (6+ digits)
       if (/^\d{6,}$/.test(tok.raw) && p.barcode && p.barcode.includes(tok.raw)) return true;
+
+      // Plain number token (e.g. "12")
+      if (tok.isNumeric) {
+        if (p.dimNums.has(tok.raw)) return true;
+        if (p.descLower.includes(tok.raw) || p.codeLower.includes(tok.raw)) return true;
+        return false;
+      }
+
+      // Literal or compact code match
       if (p.searchBlob.includes(tok.raw)) return true;
       if (tok.compact && tok.compact.length >= 2 && p.codeCompact.includes(tok.compact)) return true;
-      // Check synonym expansions
+
+      // Synonym expansions
       for (const [a, b] of SYNONYMS) {
         if (tok.raw === a && p.searchBlob.includes(b)) return true;
+        if (tok.raw === b && p.searchBlob.includes(a)) return true;
       }
+
+      // Hardware Decision Model intent rule (e.g. "concrete" -> SDS/Masonry, "mag" -> Rota Broach)
+      if (allowIntent) {
+        const rule = INTENT_RULES[tok.raw];
+        if (rule) {
+          if (rule.cats && rule.cats.includes(p.cat)) return true;
+          for (const term of rule.terms) {
+            if (p.searchBlob.includes(term)) return true;
+          }
+        }
+      }
+
       return false;
     }
 
@@ -1136,8 +1291,8 @@
     }
 
     function fuzzyTokenMatchesProduct(tok, p) {
-      if (tokenMatchesProduct(tok, p)) return true;
-      if (tok.raw.length < 4 || /^\d+$/.test(tok.raw)) return false;
+      if (tokenMatchesProduct(tok, p, true)) return true;
+      if (tok.isNumeric || tok.raw.length < 4) return false;
       for (const w of p.words) {
         if (w.length >= 4 && levenshtein1OrLess(tok.raw, w)) return true;
       }
@@ -1150,31 +1305,67 @@
       const qRaw = parsed.raw;
       const qCompact = compactCode(qRaw);
 
+      // 1. Exact / prefix product code match
       if (p.codeLower === qRaw || (qCompact && p.codeCompact === qCompact)) {
-        score += 1200;
+        score += 2000;
       } else if (p.codeLower.startsWith(qRaw) || (qCompact && p.codeCompact.startsWith(qCompact))) {
-        score += 700;
+        score += 900;
       } else if (p.codeLower.includes(qRaw)) {
-        score += 400;
+        score += 450;
       }
 
-      if (p.descLower.includes(qRaw)) {
-        score += 350;
-      }
-
-      for (const tok of parsed.tokens) {
-        if (p.codeLower.includes(tok.raw)) score += 90;
-        if (tok.numOnly) {
-          const wb = new RegExp(`(?:^|[^0-9.])${escapeRegExp(tok.numOnly)}(?:mm|[^0-9.]|$)`, 'i');
-          if (wb.test(p.descLower)) score += 80;
-          if (wb.test(p.codeLower)) score += 70;
-        } else {
-          const wb = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(tok.raw)}(?:[^a-z0-9]|$)`, 'i');
-          if (wb.test(p.descLower)) score += 60;
-          else if (p.descLower.includes(tok.raw)) score += 30;
-          else if (p.catLower.includes(tok.raw)) score += 20;
+      // 2. Exact joined dimension pair boost (e.g. "12x600" strongly boosts "12 X 600MM" & "SDSP-12-600")
+      for (const [a, b] of parsed.dimPairs) {
+        if (p.dimJoined.includes(`${a}x${b}`) || p.codeLower.includes(`${a}-${b}`)) {
+          score += 900;
+        } else if (p.dimNums.has(a) && p.dimNums.has(b)) {
+          score += 400;
         }
       }
+
+      // 3. Exact phrase in description
+      if (p.descLower.includes(qRaw)) {
+        score += 380;
+      }
+
+      // 4. Per-token decision scoring
+      for (const tok of parsed.tokens) {
+        if (tok.isNumeric) {
+          const num = tok.numOnly || tok.raw;
+          if (p.dimNums.has(num)) {
+            score += 320;
+            // Bonus if appears with mm or as standalone dimension (e.g. "14MM" over "M14")
+            if (p.descLower.includes(num + 'mm') || p.descLower.includes(num + ' x ')) {
+              score += 110;
+            }
+            // Bonus if appears at very start of description (e.g. "12 X 600MM...")
+            if (p.descLower.startsWith(num + ' ') || p.descLower.startsWith(num + 'mm')) {
+              score += 120;
+            }
+          } else if (p.descLower.includes(num) || p.codeLower.includes(num)) {
+            score += 30;
+          }
+          if (p.codeLower.includes(num)) score += 60;
+        } else {
+          const literalHit = p.descLower.includes(tok.raw) || p.codeLower.includes(tok.raw);
+          if (literalHit) {
+            score += 140;
+            if (p.codeLower.includes(tok.raw)) score += 70;
+          }
+          if (p.catLower.includes(tok.raw)) {
+            score += 80;
+          }
+          const rule = INTENT_RULES[tok.raw];
+          if (rule) {
+            if (rule.cats && rule.cats.includes(p.cat)) score += 110;
+            if (rule.terms.some((t) => p.descLower.includes(t))) score += 65;
+          }
+        }
+      }
+
+      // 5. Gentle tie-breaker for in-stock items
+      if (p.qty > 0) score += 8;
+
       return score;
     }
 
@@ -1182,16 +1373,20 @@
       if (!tokens || !tokens.length) return escapeHtml(text);
       const terms = [];
       for (const t of tokens) {
-        if (t.numOnly) {
-          terms.push(t.numOnly + '(?:\\s*mm)?');
+        if (t.exactDim || t.isNumeric) {
+          const numEsc = escapeRegExp(t.exactDim || t.raw);
+          terms.push(`\\b${numEsc}(?:\\s*mm)?\\b`);
         } else if (t.raw.length >= 2) {
           terms.push(escapeRegExp(t.raw));
-        } else if (/^\d$/.test(t.raw)) {
-          terms.push('(?<!\\d)' + escapeRegExp(t.raw) + '(?!\\d)');
+          const rule = INTENT_RULES[t.raw];
+          if (rule) {
+            for (const rt of rule.terms.slice(0, 3)) {
+              if (rt.length >= 3) terms.push(escapeRegExp(rt));
+            }
+          }
         }
       }
       if (!terms.length) return escapeHtml(text);
-      // Sort longest first to avoid partial match stealing
       terms.sort((a, b) => b.length - a.length);
       let re;
       try {
@@ -1225,26 +1420,56 @@
       return { text: '€' + finalVal.toFixed(2), isPoa: false };
     }
 
+    function runSearchPool(pool, parsed) {
+      if (parsed.tokens.length === 0) {
+        return { items: pool.slice(), usedFuzzy: false };
+      }
+
+      // Stage A: Strict Decision Match (all tokens match via exact dim/text/intent)
+      let matched = pool.filter((p) => parsed.tokens.every((t) => tokenMatchesProduct(t, p, true)));
+      if (matched.length > 0) {
+        return { items: matched, usedFuzzy: false };
+      }
+
+      // Stage B: Fuzzy Typo Recovery
+      const fuzzy = pool.filter((p) => parsed.tokens.every((t) => fuzzyTokenMatchesProduct(t, p)));
+      if (fuzzy.length > 0) {
+        return { items: fuzzy, usedFuzzy: true };
+      }
+
+      // Stage C: Partial Decision Fallback when user enters 3+ tokens (keep all exact dimensions, allow 1 missing word)
+      if (parsed.tokens.length >= 3) {
+        const dimTokens = parsed.tokens.filter((t) => t.isNumeric);
+        const wordTokens = parsed.tokens.filter((t) => !t.isNumeric);
+        if (wordTokens.length >= 2) {
+          const partial = pool.filter((p) => {
+            if (!dimTokens.every((t) => tokenMatchesProduct(t, p, true))) return false;
+            const hits = wordTokens.filter((t) => fuzzyTokenMatchesProduct(t, p)).length;
+            return hits >= Math.max(1, wordTokens.length - 1);
+          });
+          if (partial.length > 0) {
+            return { items: partial, usedFuzzy: true };
+          }
+        }
+      }
+
+      return { items: [], usedFuzzy: false };
+    }
+
     function filterAndSort() {
       const parsed = parseQuery(state.query);
-      let pool = state.category
+      const pool = state.category
         ? PRODUCTS.filter((p) => p.cat === state.category)
         : PRODUCTS;
 
-      state.usedFuzzy = false;
-      let matched;
+      const result = runSearchPool(pool, parsed);
+      state.usedFuzzy = result.usedFuzzy;
+      const matched = result.items;
 
-      if (parsed.tokens.length > 0) {
-        matched = pool.filter((p) => parsed.tokens.every((t) => tokenMatchesProduct(t, p)));
-        if (matched.length === 0) {
-          const fuzzy = pool.filter((p) => parsed.tokens.every((t) => fuzzyTokenMatchesProduct(t, p)));
-          if (fuzzy.length > 0) {
-            matched = fuzzy;
-            state.usedFuzzy = true;
-          }
-        }
-      } else {
-        matched = pool.slice();
+      // If category filter yielded 0, check if matches exist across all categories
+      let allCatCount = 0;
+      if (matched.length === 0 && state.category && parsed.tokens.length > 0) {
+        allCatCount = runSearchPool(PRODUCTS, parsed).items.length;
       }
 
       const sortMode = state.sort;
@@ -1277,7 +1502,7 @@
         matched.sort((a, b) => collator.compare(a.desc, b.desc));
       }
 
-      return { matched, parsed };
+      return { matched, parsed, allCatCount };
     }
 
     function formatQty(qty) {
@@ -1306,7 +1531,7 @@
     }
 
     function render() {
-      const { matched, parsed } = filterAndSort();
+      const { matched, parsed, allCatCount } = filterAndSort();
       const total = matched.length;
       const showing = Math.min(total, state.visibleCount);
       const vatLabel = state.incVat ? 'inc. VAT' : 'ex. VAT';
@@ -1335,9 +1560,16 @@
         tableWrap.style.display = 'none';
         emptyState.style.display = 'block';
         loadMoreWrap.style.display = 'none';
-        emptyMsg.textContent = state.category
-          ? `No products matched "${state.query}" inside ${state.category}. Try searching across all categories.`
-          : `No products matched "${state.query}". Try shorter words or just the size (e.g. "12mm" or "230").`;
+        if (state.category && allCatCount > 0) {
+          searchAllCatsBtn.style.display = '';
+          searchAllCatsBtn.textContent = `Search all categories (${allCatCount} ${allCatCount === 1 ? 'match' : 'matches'})`;
+          emptyMsg.textContent = `No products matched "${state.query}" inside ${state.category}.`;
+        } else {
+          searchAllCatsBtn.style.display = 'none';
+          emptyMsg.textContent = state.category
+            ? `No products matched "${state.query}" inside ${state.category}. Try searching across all categories.`
+            : `No products matched "${state.query}". Try shorter words or just the size (e.g. "12mm" or "230").`;
+        }
         return;
       }
 
@@ -1523,6 +1755,11 @@
       state.visibleCount = PAGE_SIZE;
       syncUrl();
       render();
+    });
+
+    searchAllCatsBtn.addEventListener('click', () => {
+      setCategory('');
+      searchInput.focus();
     });
 
     resetFiltersBtn.addEventListener('click', () => {
