@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Product Catalogue</title>
+  <title>Electric Power Tool Co. Ltd.</title>
   <meta name="description" content="Fast, mobile-friendly searchable product catalogue and price list." />
   <style>
     :root {
@@ -230,94 +230,103 @@
       color: var(--ink);
     }
 
-    /* Filter Row: Category pills + Dropdown */
-    .filter-bar {
+    /* Multi-row Categories Panel */
+    .categories-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .categories-header {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 10px;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 9px;
     }
 
-    .cat-select-wrap {
-      position: relative;
-      flex-shrink: 0;
+    .categories-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ink-muted);
     }
 
-    .cat-select {
+    .cat-toggle-btn {
       appearance: none;
-      -webkit-appearance: none;
-      height: 36px;
-      padding: 0 32px 0 12px;
-      font-family: inherit;
-      font-size: 13.5px;
-      font-weight: 600;
-      color: var(--ink);
-      background: var(--surface-subtle);
-      border: 1px solid var(--border-strong);
-      border-radius: 8px;
-      cursor: pointer;
-      max-width: 210px;
-      text-overflow: ellipsis;
-    }
-
-    .cat-select:focus {
-      outline: none;
-      border-color: var(--ink);
-    }
-
-    .cat-chevron {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 14px;
-      height: 14px;
-      pointer-events: none;
+      border: none;
+      background: transparent;
       color: var(--ink-secondary);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .cat-toggle-btn:hover {
+      background: var(--code-bg);
+      color: var(--ink);
     }
 
     .quick-pills {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 6px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      padding: 2px 0;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .quick-pills::-webkit-scrollbar {
-      display: none;
+      gap: 7px;
     }
 
     .pill {
       appearance: none;
       border: 1px solid var(--border);
-      background: var(--surface);
+      background: var(--surface-subtle);
       color: var(--ink-secondary);
       font-family: inherit;
       font-size: 13px;
       font-weight: 500;
-      padding: 6px 12px;
+      padding: 6px 11px;
       border-radius: 999px;
       cursor: pointer;
       white-space: nowrap;
-      flex-shrink: 0;
       transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .pill-count {
+      font-size: 11.5px;
+      opacity: 0.68;
+      font-variant-numeric: tabular-nums;
     }
 
     .pill:hover {
       border-color: var(--border-strong);
       color: var(--ink);
-      background: var(--surface-subtle);
+      background: var(--code-bg);
     }
 
     .pill.active {
       background: var(--ink);
       border-color: var(--ink);
       color: #ffffff;
+      font-weight: 600;
+    }
+
+    .pill.active .pill-count {
+      opacity: 0.85;
+    }
+
+    .pill-more {
+      border-style: dashed;
+      border-color: var(--border-strong);
+      background: var(--surface);
+      color: var(--ink);
       font-weight: 600;
     }
 
@@ -742,9 +751,9 @@
     <div class="container">
       <div class="topbar-inner">
         <div class="brand">
-          <div class="brand-mark" aria-hidden="true">PC</div>
+          <div class="brand-mark" aria-hidden="true">EPT</div>
           <div class="brand-text">
-            <h1>Product Catalogue</h1>
+            <h1>Electric Power Tool Co. Ltd.</h1>
             <p id="subtitle">1,510 products · Prices in EUR</p>
           </div>
         </div>
@@ -756,7 +765,7 @@
     </div>
   </header>
 
-  <section class="search-dock" aria-label="Search and filter">
+  <section class="search-dock" aria-label="Search products">
     <div class="container">
       <div class="search-box-wrap">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -782,23 +791,19 @@
           </svg>
         </button>
       </div>
-
-      <div class="filter-bar">
-        <div class="cat-select-wrap">
-          <select id="categorySelect" class="cat-select" aria-label="Filter by category">
-            <option value="">All Categories</option>
-          </select>
-          <svg class="cat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="m6 9 6 6 6-6"></path>
-          </svg>
-        </div>
-        <div id="quickPills" class="quick-pills" role="tablist" aria-label="Popular categories"></div>
-      </div>
     </div>
   </section>
 
   <main class="main">
     <div class="container">
+      <section class="categories-panel" aria-label="Product categories">
+        <div class="categories-header">
+          <span class="categories-title">Categories</span>
+          <button type="button" id="catToggleBtn" class="cat-toggle-btn" aria-expanded="false">Show all</button>
+        </div>
+        <div id="quickPills" class="quick-pills" role="tablist" aria-label="Filter by category"></div>
+      </section>
+
       <div id="hintsBar" class="hints-bar">
         <span>Quick try:</span>
         <button type="button" class="hint-chip" data-q="12mm sds">12mm sds</button>
@@ -944,7 +949,7 @@
     const topCategories = Array.from(catCounts.entries())
       .filter(([name]) => name !== 'Other')
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
+      .slice(0, 14)
       .map(([name]) => name);
 
     // State
@@ -954,13 +959,14 @@
       sort: 'relevance',
       incVat: false,
       visibleCount: PAGE_SIZE,
-      usedFuzzy: false
+      usedFuzzy: false,
+      categoriesExpanded: false
     };
 
     // Elements
     const searchInput = document.getElementById('searchInput');
     const clearBtn = document.getElementById('clearBtn');
-    const categorySelect = document.getElementById('categorySelect');
+    const catToggleBtn = document.getElementById('catToggleBtn');
     const quickPills = document.getElementById('quickPills');
     const sortSelect = document.getElementById('sortSelect');
     const vatExBtn = document.getElementById('vatExBtn');
@@ -977,36 +983,65 @@
     const fabTop = document.getElementById('fabTop');
     const toast = document.getElementById('toast');
 
-    // Populate category dropdown & quick pills
-    function initCategories() {
-      for (const cat of allCategories) {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = `${cat} (${catCounts.get(cat)})`;
-        categorySelect.appendChild(opt);
+    function makeCategoryPill(label, value, count) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pill' + (state.category === value ? ' active' : '');
+      btn.dataset.cat = value;
+      btn.innerHTML = `<span>${escapeHtml(label)}</span><span class="pill-count">${count.toLocaleString()}</span>`;
+      btn.addEventListener('click', () => {
+        setCategory(value);
+      });
+      return btn;
+    }
+
+    function renderCategoryPills() {
+      quickPills.innerHTML = '';
+      quickPills.appendChild(makeCategoryPill('All', '', PRODUCTS.length));
+
+      let list;
+      if (state.categoriesExpanded) {
+        list = allCategories;
+      } else {
+        list = topCategories.slice();
+        if (state.category && !list.includes(state.category)) {
+          list.push(state.category);
+        }
       }
 
-      const makePill = (label, value) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'pill' + (state.category === value ? ' active' : '');
-        btn.textContent = label;
-        btn.dataset.cat = value;
-        btn.addEventListener('click', () => {
-          setCategory(value);
+      for (const cat of list) {
+        quickPills.appendChild(makeCategoryPill(cat, cat, catCounts.get(cat) || 0));
+      }
+
+      const remaining = allCategories.length - topCategories.length;
+      if (!state.categoriesExpanded && remaining > 0) {
+        const moreBtn = document.createElement('button');
+        moreBtn.type = 'button';
+        moreBtn.className = 'pill pill-more';
+        moreBtn.textContent = `+ ${remaining} more`;
+        moreBtn.addEventListener('click', () => {
+          state.categoriesExpanded = true;
+          renderCategoryPills();
         });
-        return btn;
-      };
-
-      quickPills.appendChild(makePill('All', ''));
-      for (const cat of topCategories) {
-        quickPills.appendChild(makePill(cat, cat));
+        quickPills.appendChild(moreBtn);
       }
+
+      catToggleBtn.textContent = state.categoriesExpanded
+        ? 'Show fewer'
+        : `Show all (${allCategories.length})`;
+      catToggleBtn.setAttribute('aria-expanded', String(state.categoriesExpanded));
+    }
+
+    function initCategories() {
+      renderCategoryPills();
     }
 
     function syncCategoryUI() {
-      categorySelect.value = state.category;
-      for (const btn of quickPills.querySelectorAll('.pill')) {
+      if (state.category && !state.categoriesExpanded && !topCategories.includes(state.category)) {
+        renderCategoryPills();
+        return;
+      }
+      for (const btn of quickPills.querySelectorAll('.pill[data-cat]')) {
         btn.classList.toggle('active', btn.dataset.cat === state.category);
       }
     }
@@ -1424,8 +1459,9 @@
       searchInput.focus();
     });
 
-    categorySelect.addEventListener('change', (e) => {
-      setCategory(e.target.value);
+    catToggleBtn.addEventListener('click', () => {
+      state.categoriesExpanded = !state.categoriesExpanded;
+      renderCategoryPills();
     });
 
     sortSelect.addEventListener('change', (e) => {

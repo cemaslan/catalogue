@@ -63,7 +63,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--title",
-        default="Product Catalogue",
+        default="Electric Power Tool Co. Ltd.",
         help="Page title / store name",
     )
     parser.add_argument(
