@@ -111,7 +111,14 @@
       color: var(--ink-muted);
     }
 
-    /* VAT Segmented Toggle */
+    .topbar-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Segmented Toggles (Prices & VAT) */
     .vat-toggle {
       display: inline-flex;
       background: var(--bg);
@@ -120,6 +127,7 @@
       padding: 3px;
       gap: 2px;
       flex-shrink: 0;
+      transition: opacity 0.15s ease;
     }
 
     .vat-btn {
@@ -141,6 +149,17 @@
       background: var(--surface);
       color: var(--ink);
       box-shadow: var(--shadow-sm);
+    }
+
+    body.prices-hidden #vatToggle {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    body.prices-hidden .price-block,
+    body.prices-hidden .col-price,
+    body.prices-hidden .col-price-head {
+      display: none;
     }
 
     /* Sticky Search Header */
@@ -451,10 +470,8 @@
       gap: 10px;
     }
 
-    .code-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+    .code-badge {
+      display: inline-block;
       font-family: var(--font-mono);
       font-size: 13px;
       font-weight: 600;
@@ -463,29 +480,8 @@
       border: 1px solid var(--code-border);
       border-radius: 7px;
       padding: 5px 9px;
-      cursor: pointer;
-      transition: all 0.15s ease;
       max-width: 100%;
       word-break: break-all;
-      text-align: left;
-    }
-
-    .code-btn:hover {
-      border-color: var(--border-strong);
-      background: #e2e8f0;
-    }
-
-    .code-btn.copied {
-      background: var(--success-bg);
-      border-color: #6ee7b7;
-      color: var(--success);
-    }
-
-    .copy-icon {
-      width: 13px;
-      height: 13px;
-      opacity: 0.6;
-      flex-shrink: 0;
     }
 
     .price-block {
@@ -719,31 +715,6 @@
     .fab-top.visible {
       display: inline-flex;
     }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 24px;
-      transform: translateX(-50%) translateY(16px);
-      background: var(--ink);
-      color: #ffffff;
-      font-size: 13.5px;
-      font-weight: 600;
-      padding: 10px 18px;
-      border-radius: 999px;
-      box-shadow: var(--shadow-md);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.18s ease, transform 0.18s ease;
-      z-index: 50;
-      white-space: nowrap;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
   </style>
 </head>
 <body>
@@ -757,9 +728,15 @@
             <p id="subtitle">__SUBTITLE__</p>
           </div>
         </div>
-        <div class="vat-toggle" role="group" aria-label="VAT display">
-          <button type="button" class="vat-btn" id="vatExBtn" aria-pressed="true">Ex. VAT</button>
-          <button type="button" class="vat-btn" id="vatIncBtn" aria-pressed="false">Inc. 23% VAT</button>
+        <div class="topbar-controls">
+          <div class="vat-toggle" id="priceToggle" role="group" aria-label="Price visibility">
+            <button type="button" class="vat-btn" id="priceShowBtn" aria-pressed="true">Show Prices</button>
+            <button type="button" class="vat-btn" id="priceHideBtn" aria-pressed="false">Hide Prices</button>
+          </div>
+          <div class="vat-toggle" id="vatToggle" role="group" aria-label="VAT display">
+            <button type="button" class="vat-btn" id="vatExBtn" aria-pressed="true">Ex. VAT</button>
+            <button type="button" class="vat-btn" id="vatIncBtn" aria-pressed="false">Inc. 23% VAT</button>
+          </div>
         </div>
       </div>
     </div>
@@ -835,7 +812,7 @@
             <tr>
               <th class="sortable" data-sort="code">Product Code</th>
               <th class="sortable" data-sort="natural">Description</th>
-              <th class="sortable num" data-sort="price-asc">Price</th>
+              <th class="sortable num col-price-head" data-sort="price-asc">Price</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -858,8 +835,6 @@
     </svg>
     Search
   </button>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
     // Embedded product catalog: [code, description, priceExVat, category, barcode]
@@ -958,6 +933,7 @@
       category: '',
       sort: 'relevance',
       incVat: false,
+      showPrices: true,
       visibleCount: PAGE_SIZE,
       usedFuzzy: false,
       categoriesExpanded: false
@@ -969,6 +945,8 @@
     const catToggleBtn = document.getElementById('catToggleBtn');
     const quickPills = document.getElementById('quickPills');
     const sortSelect = document.getElementById('sortSelect');
+    const priceShowBtn = document.getElementById('priceShowBtn');
+    const priceHideBtn = document.getElementById('priceHideBtn');
     const vatExBtn = document.getElementById('vatExBtn');
     const vatIncBtn = document.getElementById('vatIncBtn');
     const hintsBar = document.getElementById('hintsBar');
@@ -981,7 +959,6 @@
     const resetFiltersBtn = document.getElementById('resetFiltersBtn');
     const loadMoreWrap = document.getElementById('loadMoreWrap');
     const fabTop = document.getElementById('fabTop');
-    const toast = document.getElementById('toast');
 
     function makeCategoryPill(label, value, count) {
       const btn = document.createElement('button');
@@ -1260,42 +1237,20 @@
       return { matched, parsed };
     }
 
-    let toastTimer = null;
-    function showToast(msg) {
-      toast.textContent = msg;
-      toast.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
-    }
-
-    function copyCode(code, btnEl) {
-      const done = () => {
-        if (btnEl) {
-          btnEl.classList.add('copied');
-          setTimeout(() => btnEl.classList.remove('copied'), 1200);
+    function syncPriceUI() {
+      document.body.classList.toggle('prices-hidden', !state.showPrices);
+      priceShowBtn.setAttribute('aria-pressed', String(state.showPrices));
+      priceHideBtn.setAttribute('aria-pressed', String(!state.showPrices));
+      for (const opt of sortSelect.options) {
+        if (opt.value === 'price-asc' || opt.value === 'price-desc') {
+          opt.disabled = !state.showPrices;
         }
-        showToast(`Copied code: ${code}`);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(code).then(done).catch(() => fallbackCopy(code, done));
-      } else {
-        fallbackCopy(code, done);
+      }
+      if (!state.showPrices && (state.sort === 'price-asc' || state.sort === 'price-desc')) {
+        state.sort = 'relevance';
+        sortSelect.value = 'relevance';
       }
     }
-
-    function fallbackCopy(text, cb) {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); } catch {}
-      document.body.removeChild(ta);
-      cb();
-    }
-
-    const COPY_SVG = `<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
 
     function render() {
       const { matched, parsed } = filterAndSort();
@@ -1354,9 +1309,7 @@
         cardsHtml.push(`
           <article class="product-card">
             <div class="card-top">
-              <button type="button" class="code-btn" data-code="${escapeHtml(p.code)}" title="Tap to copy product code">
-                <span>${codeHtml}</span>${COPY_SVG}
-              </button>
+              <span class="code-badge">${codeHtml}</span>
               <div class="price-block">${priceHtml}</div>
             </div>
             <div class="card-desc">${descHtml}</div>
@@ -1366,9 +1319,7 @@
         rowsHtml.push(`
           <tr>
             <td class="col-code">
-              <button type="button" class="code-btn" data-code="${escapeHtml(p.code)}" title="Click to copy product code">
-                <span>${codeHtml}</span>${COPY_SVG}
-              </button>
+              <span class="code-badge">${codeHtml}</span>
             </td>
             <td class="col-desc">${descHtml}</td>
             <td class="col-price num">
@@ -1415,6 +1366,7 @@
         if (state.query) params.set('q', state.query);
         if (state.category) params.set('cat', state.category);
         if (state.incVat) params.set('vat', 'inc');
+        if (!state.showPrices) params.set('prices', 'hide');
         const qs = params.toString();
         const newUrl = window.location.pathname + (qs ? '?' + qs : '');
         window.history.replaceState(null, '', newUrl);
@@ -1427,6 +1379,7 @@
         const q = params.get('q') || '';
         const cat = params.get('cat') || '';
         const vat = params.get('vat') === 'inc';
+        const hidePrices = params.get('prices') === 'hide';
         if (q) {
           state.query = q;
           searchInput.value = q;
@@ -1438,6 +1391,9 @@
           state.incVat = true;
           vatExBtn.setAttribute('aria-pressed', 'false');
           vatIncBtn.setAttribute('aria-pressed', 'true');
+        }
+        if (hidePrices) {
+          state.showPrices = false;
         }
       } catch {}
     }
@@ -1467,6 +1423,19 @@
     sortSelect.addEventListener('change', (e) => {
       state.sort = e.target.value;
       state.visibleCount = PAGE_SIZE;
+      render();
+    });
+
+    priceShowBtn.addEventListener('click', () => {
+      state.showPrices = true;
+      syncPriceUI();
+      syncUrl();
+    });
+
+    priceHideBtn.addEventListener('click', () => {
+      state.showPrices = false;
+      syncPriceUI();
+      syncUrl();
       render();
     });
 
@@ -1507,14 +1476,6 @@
       searchInput.focus();
     });
 
-    // Delegate click on copy code buttons
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.code-btn');
-      if (btn && btn.dataset.code) {
-        copyCode(btn.dataset.code, btn);
-      }
-    });
-
     // Clickable desktop table headers to sort
     document.querySelectorAll('.catalog-table thead th.sortable').forEach((th) => {
       th.addEventListener('click', () => {
@@ -1552,6 +1513,7 @@
     // Init
     initCategories();
     readUrl();
+    syncPriceUI();
     syncCategoryUI();
     render();
   </script>
