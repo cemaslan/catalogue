@@ -1967,6 +1967,40 @@
       });
     });
 
+    // Dismiss mobile keyboard on Enter/Search key or scrolling down
+    let focusScrollY = 0;
+    let focusTime = 0;
+    let touchStartY = null;
+
+    searchInput.addEventListener('focus', () => {
+      focusScrollY = window.scrollY;
+      focusTime = Date.now();
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchInput.blur();
+      }
+    });
+
+    document.addEventListener('touchstart', (e) => {
+      if (document.activeElement === searchInput && e.target !== searchInput && e.touches && e.touches.length === 1) {
+        touchStartY = e.touches[0].clientY;
+      } else {
+        touchStartY = null;
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+      if (document.activeElement === searchInput && touchStartY !== null && e.touches && e.touches.length === 1) {
+        if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
+          searchInput.blur();
+          touchStartY = null;
+        }
+      }
+    }, { passive: true });
+
     // Keyboard shortcuts: '/' focuses search, Escape clears
     document.addEventListener('keydown', (e) => {
       if (e.key === '/' && document.activeElement !== searchInput && document.activeElement.tagName !== 'SELECT') {
@@ -1977,9 +2011,13 @@
       }
     });
 
-    // Back-to-search FAB visibility
+    // Back-to-search FAB visibility + blur keyboard on downward scroll
     window.addEventListener('scroll', () => {
-      fabTop.classList.toggle('visible', window.scrollY > 360);
+      const sy = window.scrollY;
+      fabTop.classList.toggle('visible', sy > 360);
+      if (document.activeElement === searchInput && Date.now() - focusTime > 350 && sy > focusScrollY + 24) {
+        searchInput.blur();
+      }
     }, { passive: true });
 
     fabTop.addEventListener('click', () => {
