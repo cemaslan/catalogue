@@ -523,6 +523,35 @@
       word-break: break-word;
     }
 
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 12.5px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      padding: 3px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .stock-badge.in-stock {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .stock-badge.out-of-stock {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
     /* Desktop Table View (>= 720px) */
     .table-wrap {
       display: none;
@@ -584,7 +613,7 @@
     }
 
     .catalog-table tbody td.col-code {
-      width: 230px;
+      width: 220px;
       white-space: nowrap;
     }
 
@@ -594,8 +623,13 @@
       color: var(--ink);
     }
 
+    .catalog-table tbody td.col-qty {
+      width: 120px;
+      white-space: nowrap;
+    }
+
     .catalog-table tbody td.col-price {
-      width: 145px;
+      width: 135px;
       white-space: nowrap;
     }
 
@@ -799,6 +833,8 @@
             <option value="natural">Size / Description</option>
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
+            <option value="qty-desc">In Stock: High to Low</option>
+            <option value="qty-asc">In Stock: Low to High</option>
             <option value="code">Code: A–Z</option>
           </select>
         </div>
@@ -812,6 +848,7 @@
             <tr>
               <th class="sortable" data-sort="code">Product Code</th>
               <th class="sortable" data-sort="natural">Description</th>
+              <th class="sortable num col-qty-head" data-sort="qty-desc">In Stock</th>
               <th class="sortable num col-price-head" data-sort="price-asc">Price</th>
             </tr>
           </thead>
@@ -837,7 +874,7 @@
   </button>
 
   <script>
-    // Embedded product catalog: [code, description, priceExVat, category, barcode]
+    // Embedded product catalog: [code, description, priceExVat, category, barcode, qtyInStock]
     const RAW_PRODUCTS = __PRODUCTS_JSON__;
 
     const VAT_RATE = 1.23;
@@ -885,6 +922,7 @@
       const price = row[2];
       const cat = row[3] || 'Other';
       const barcode = row[4] || '';
+      const qty = typeof row[5] === 'number' ? row[5] : 0;
       const codeLower = code.toLowerCase();
       const descLower = desc.toLowerCase();
       const catLower = cat.toLowerCase();
@@ -902,6 +940,7 @@
         price,
         cat,
         barcode,
+        qty,
         codeLower,
         codeCompact: compactCode(code),
         descLower,
@@ -1227,6 +1266,10 @@
         });
       } else if (sortMode === 'price-desc') {
         matched.sort((a, b) => b.price - a.price || collator.compare(a.desc, b.desc));
+      } else if (sortMode === 'qty-desc') {
+        matched.sort((a, b) => b.qty - a.qty || collator.compare(a.desc, b.desc));
+      } else if (sortMode === 'qty-asc') {
+        matched.sort((a, b) => a.qty - b.qty || collator.compare(a.desc, b.desc));
       } else if (sortMode === 'code') {
         matched.sort((a, b) => collator.compare(a.code, b.code));
       } else {
@@ -1235,6 +1278,16 @@
       }
 
       return { matched, parsed };
+    }
+
+    function formatQty(qty) {
+      if (qty <= 0) {
+        return { text: '0', cls: 'out-of-stock', mobileText: 'Out of stock (0)' };
+      }
+      const numText = Number.isInteger(qty)
+        ? qty.toLocaleString()
+        : Number(qty.toFixed(2)).toLocaleString();
+      return { text: numText, cls: 'in-stock', mobileText: `In stock: ${numText}` };
     }
 
     function syncPriceUI() {
@@ -1301,6 +1354,7 @@
       for (const p of slice) {
         const codeHtml = highlightText(p.code, tokens);
         const descHtml = highlightText(p.desc, tokens);
+        const qtyObj = formatQty(p.qty);
         const priceObj = formatPrice(p.price);
         const priceHtml = priceObj.isPoa
           ? `<span class="price-val poa">POA</span>`
@@ -1313,6 +1367,9 @@
               <div class="price-block">${priceHtml}</div>
             </div>
             <div class="card-desc">${descHtml}</div>
+            <div class="card-meta">
+              <span class="stock-badge ${qtyObj.cls}">${qtyObj.mobileText}</span>
+            </div>
           </article>
         `);
 
@@ -1322,6 +1379,9 @@
               <span class="code-badge">${codeHtml}</span>
             </td>
             <td class="col-desc">${descHtml}</td>
+            <td class="col-qty num">
+              <span class="stock-badge ${qtyObj.cls}">${qtyObj.text}</span>
+            </td>
             <td class="col-price num">
               <div class="price-block">${priceHtml}</div>
             </td>
@@ -1482,6 +1542,8 @@
         const targetSort = th.dataset.sort;
         if (targetSort === 'price-asc' && state.sort === 'price-asc') {
           state.sort = 'price-desc';
+        } else if (targetSort === 'qty-desc' && state.sort === 'qty-desc') {
+          state.sort = 'qty-asc';
         } else {
           state.sort = targetSort;
         }

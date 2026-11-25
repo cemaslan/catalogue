@@ -28,16 +28,23 @@ def build_catalog(csv_path: Path, template_path: Path, output_path: Path, title:
             if not code or not desc:
                 continue
 
-            raw_price = (row.get("Sales Price 1 Value") or "0").strip()
+            raw_price = (row.get("Sales Price 1 Value") or "0").replace(",", "").strip()
             try:
                 price = round(float(raw_price), 2)
             except ValueError:
                 price = 0.0
 
+            raw_qty = (row.get("Quantity In Stock") or "0").replace(",", "").strip()
+            try:
+                qty_val = round(float(raw_qty), 2)
+                qty = int(qty_val) if qty_val.is_integer() else qty_val
+            except ValueError:
+                qty = 0
+
             category = (row.get("Category") or "").strip() or "Other"
             barcode = (row.get("Barcode") or "").strip()
 
-            products.append([code, desc, price, category, barcode])
+            products.append([code, desc, price, category, barcode, qty])
 
     template = template_path.read_text(encoding="utf-8")
     products_json = json.dumps(products, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
