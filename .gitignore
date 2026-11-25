@@ -1,0 +1,4 @@
+stock_item_export.csv
+*.csv
+__pycache__/
+.DS_Store

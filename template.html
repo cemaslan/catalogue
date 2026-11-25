@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>__TITLE__</title>
+  <meta name="description" content="Fast, mobile-friendly searchable product catalogue and price list." />
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --surface: #ffffff;
+      --surface-subtle: #f8fafc;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --ink: #0f172a;
+      --ink-secondary: #475569;
+      --ink-muted: #64748b;
+      --accent: #0f172a;
+      --accent-hover: #1e293b;
+      --brand: #d97706;
+      --brand-bg: #fef3c7;
+      --brand-ink: #92400e;
+      --mark-bg: #fde68a;
+      --mark-ink: #0f172a;
+      --success: #047857;
+      --success-bg: #d1fae5;
+      --code-bg: #f1f5f9;
+      --code-border: #e2e8f0;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+      --radius: 12px;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+      min-height: 100vh;
+    }
+
+    /* Top Brand Bar */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: var(--ink);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-text h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      margin: 2px 0 0;
+      font-size: 12.5px;
+      color: var(--ink-muted);
+    }
+
+    /* VAT Segmented Toggle */
+    .vat-toggle {
+      display: inline-flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .vat-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--ink-secondary);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .vat-btn[aria-pressed="true"] {
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Sticky Search Header */
+    .search-dock {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      padding: 12px 0 10px;
+    }
+
+    .search-box-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      width: 20px;
+      height: 20px;
+      color: var(--ink-muted);
+      pointer-events: none;
+      transition: color 0.15s ease;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 52px;
+      padding: 0 48px 0 46px;
+      font-family: inherit;
+      font-size: 16px; /* >=16px avoids iOS zoom on focus */
+      font-weight: 500;
+      color: var(--ink);
+      background: var(--surface);
+      border: 2px solid var(--border-strong);
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .search-input::placeholder {
+      color: var(--ink-muted);
+      font-weight: 400;
+    }
+
+    .search-input:focus {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+    }
+
+    .search-input:focus + .clear-btn,
+    .search-box-wrap:focus-within .search-icon {
+      color: var(--ink);
+    }
+
+    .clear-btn {
+      position: absolute;
+      right: 8px;
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .clear-btn.visible {
+      display: flex;
+    }
+
+    .clear-btn:hover,
+    .clear-btn:focus-visible {
+      background: var(--code-bg);
+      color: var(--ink);
+    }
+
+    /* Filter Row: Category pills + Dropdown */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .cat-select-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .cat-select {
+      appearance: none;
+      -webkit-appearance: none;
+      height: 36px;
+      padding: 0 32px 0 12px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      cursor: pointer;
+      max-width: 210px;
+      text-overflow: ellipsis;
+    }
+
+    .cat-select:focus {
+      outline: none;
+      border-color: var(--ink);
+    }
+
+    .cat-chevron {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+      color: var(--ink-secondary);
+    }
+
+    .quick-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 2px 0;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .quick-pills::-webkit-scrollbar {
+      display: none;
+    }
+
+    .pill {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink-secondary);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+
+    .pill:hover {
+      border-color: var(--border-strong);
+      color: var(--ink);
+      background: var(--surface-subtle);
+    }
+
+    .pill.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Main Content */
+    .main {
+      padding: 14px 0 64px;
+    }
+
+    /* Example Hints Strip */
+    .hints-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+      color: var(--ink-muted);
+    }
+
+    .hint-chip {
+      appearance: none;
+      border: 1px dashed var(--border-strong);
+      background: var(--surface);
+      color: var(--ink-secondary);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .hint-chip:hover {
+      border-style: solid;
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    /* Status & Sort Bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .result-count {
+      font-size: 13.5px;
+      color: var(--ink-secondary);
+      font-weight: 500;
+    }
+
+    .result-count strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .fuzzy-note {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--brand-bg);
+      color: var(--brand-ink);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .sort-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sort-label {
+      font-size: 12.5px;
+      color: var(--ink-muted);
+    }
+
+    .sort-select {
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 6px 26px 6px 10px;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+    }
+
+    /* Mobile Card List (default < 720px) */
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 13px 15px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .code-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 7px;
+      padding: 5px 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      max-width: 100%;
+      word-break: break-all;
+      text-align: left;
+    }
+
+    .code-btn:hover {
+      border-color: var(--border-strong);
+      background: #e2e8f0;
+    }
+
+    .code-btn.copied {
+      background: var(--success-bg);
+      border-color: #6ee7b7;
+      color: var(--success);
+    }
+
+    .copy-icon {
+      width: 13px;
+      height: 13px;
+      opacity: 0.6;
+      flex-shrink: 0;
+    }
+
+    .price-block {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .price-val {
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+    }
+
+    .price-val.poa {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      background: var(--code-bg);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .price-vat {
+      display: block;
+      font-size: 11px;
+      color: var(--ink-muted);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .card-desc {
+      font-size: 15.5px;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.38;
+      word-break: break-word;
+    }
+
+    /* Desktop Table View (>= 720px) */
+    .table-wrap {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    table.catalog-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .catalog-table thead th {
+      background: var(--surface-subtle);
+      border-bottom: 1px solid var(--border);
+      padding: 11px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ink-secondary);
+      user-select: none;
+    }
+
+    .catalog-table thead th.sortable {
+      cursor: pointer;
+    }
+
+    .catalog-table thead th.sortable:hover {
+      color: var(--ink);
+      background: #f1f5f9;
+    }
+
+    .catalog-table thead th.num,
+    .catalog-table tbody td.num {
+      text-align: right;
+    }
+
+    .catalog-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s ease;
+    }
+
+    .catalog-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .catalog-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .catalog-table tbody td {
+      padding: 12px 16px;
+      vertical-align: middle;
+    }
+
+    .catalog-table tbody td.col-code {
+      width: 230px;
+      white-space: nowrap;
+    }
+
+    .catalog-table tbody td.col-desc {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .catalog-table tbody td.col-price {
+      width: 145px;
+      white-space: nowrap;
+    }
+
+    mark {
+      background: var(--mark-bg);
+      color: var(--mark-ink);
+      padding: 0 2px;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+
+    @media (min-width: 720px) {
+      .card-list {
+        display: none;
+      }
+      .table-wrap {
+        display: block;
+      }
+      .brand-text h1 {
+        font-size: 20px;
+      }
+    }
+
+    /* Load More & Empty State */
+    .load-more-wrap {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-subtle);
+      border-color: var(--ink);
+    }
+
+    .btn-primary {
+      appearance: none;
+      border: none;
+      background: var(--ink);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 22px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .empty-state {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .empty-state h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: var(--ink);
+    }
+
+    .empty-state p {
+      margin: 0 0 18px;
+      font-size: 14px;
+      color: var(--ink-muted);
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Floating Back to Search Button */
+    .fab-top {
+      position: fixed;
+      right: 18px;
+      bottom: 20px;
+      z-index: 40;
+      appearance: none;
+      border: none;
+      background: var(--ink);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 11px 16px;
+      border-radius: 999px;
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .fab-top.visible {
+      display: inline-flex;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--ink);
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 999px;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 50;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">PC</div>
+          <div class="brand-text">
+            <h1>__TITLE__</h1>
+            <p id="subtitle">__SUBTITLE__</p>
+          </div>
+        </div>
+        <div class="vat-toggle" role="group" aria-label="VAT display">
+          <button type="button" class="vat-btn" id="vatExBtn" aria-pressed="true">Ex. VAT</button>
+          <button type="button" class="vat-btn" id="vatIncBtn" aria-pressed="false">Inc. 23% VAT</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="search-dock" aria-label="Search and filter">
+    <div class="container">
+      <div class="search-box-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <input
+          id="searchInput"
+          class="search-input"
+          type="search"
+          inputmode="search"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder='Search by product, size, or code (e.g. "12mm sds", "tct 230", "bp-115")'
+          aria-label="Search products by code, description, or size"
+        />
+        <button type="button" id="clearBtn" class="clear-btn" aria-label="Clear search" title="Clear search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="cat-select-wrap">
+          <select id="categorySelect" class="cat-select" aria-label="Filter by category">
+            <option value="">All Categories</option>
+          </select>
+          <svg class="cat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </div>
+        <div id="quickPills" class="quick-pills" role="tablist" aria-label="Popular categories"></div>
+      </div>
+    </div>
+  </section>
+
+  <main class="main">
+    <div class="container">
+      <div id="hintsBar" class="hints-bar">
+        <span>Quick try:</span>
+        <button type="button" class="hint-chip" data-q="12mm sds">12mm sds</button>
+        <button type="button" class="hint-chip" data-q="tct 230">tct 230</button>
+        <button type="button" class="hint-chip" data-q="holesaw">holesaw</button>
+        <button type="button" class="hint-chip" data-q="wire brush">wire brush</button>
+        <button type="button" class="hint-chip" data-q="bp-115">bp-115</button>
+      </div>
+
+      <div class="status-bar">
+        <div id="resultCount" class="result-count">Loading products...</div>
+        <div class="sort-wrap">
+          <label for="sortSelect" class="sort-label">Sort:</label>
+          <select id="sortSelect" class="sort-select">
+            <option value="relevance">Best Match</option>
+            <option value="natural">Size / Description</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="code">Code: A–Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="cardList" class="card-list" aria-live="polite"></div>
+
+      <div id="tableWrap" class="table-wrap">
+        <table class="catalog-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="code">Product Code</th>
+              <th class="sortable" data-sort="natural">Description</th>
+              <th class="sortable num" data-sort="price-asc">Price</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <h2>No matching products found</h2>
+        <p id="emptyMsg">Try fewer words, check the product code, or clear the category filter.</p>
+        <button type="button" id="resetFiltersBtn" class="btn-primary">Show all products</button>
+      </div>
+
+      <div id="loadMoreWrap" class="load-more-wrap" style="display: none;"></div>
+    </div>
+  </main>
+
+  <button type="button" id="fabTop" class="fab-top" aria-label="Back to search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m18 15-6-6-6 6"></path>
+    </svg>
+    Search
+  </button>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // Embedded product catalog: [code, description, priceExVat, category, barcode]
+    const RAW_PRODUCTS = __PRODUCTS_JSON__;
+
+    const VAT_RATE = 1.23;
+    const PAGE_SIZE = 60;
+    const SYNONYMS = [
+      ['sds+', 'sds plus'],
+      ['holesaw', 'hole saw'],
+      ['wirebrush', 'wire brush'],
+      ['sawblade', 'saw blade'],
+      ['rotabroach', 'rota broach'],
+      ['countersink', 'counter sink'],
+      ['multitool', 'multi tool'],
+      ['jigsaw', 'jig saw'],
+      ['allenkey', 'allen key'],
+      ['screwdriver', 'screw driver'],
+      ['s/s', 'stainless steel'],
+      ['ss', 'stainless steel'],
+      ['alu', 'aluminium'],
+      ['aluminum', 'aluminium']
+    ];
+
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+    function normalizeText(str) {
+      let s = (str || '').toLowerCase();
+      s = s.replace(/sds\s*\+/g, 'sds plus ');
+      // Separate X between numbers like 12x350 -> 12 x 350, 115x22.23 -> 115 x 22.23
+      s = s.replace(/(\d)\s*[x×*]\s*(\d)/gi, '$1 x $2');
+      // Add spaced forms for common joined/separated hardware terms
+      for (const [a, b] of SYNONYMS) {
+        if (s.includes(a)) s += ' ' + b;
+        if (s.includes(b)) s += ' ' + a;
+      }
+      return s;
+    }
+
+    function compactCode(code) {
+      return (code || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    // Build searchable index once on load (< 5ms for 1510 items)
+    const PRODUCTS = RAW_PRODUCTS.map((row, idx) => {
+      const code = row[0];
+      const desc = row[1];
+      const price = row[2];
+      const cat = row[3] || 'Other';
+      const barcode = row[4] || '';
+      const codeLower = code.toLowerCase();
+      const descLower = desc.toLowerCase();
+      const catLower = cat.toLowerCase();
+      const normDesc = normalizeText(desc + ' ' + cat);
+      // Extract pure number tokens for exact mm matching (e.g. "12 X 350MM" -> " 12 350 ")
+      const cleanTokensStr = normDesc
+        .replace(/(\d+(?:\.\d+)?)\s*mm\b/gi, '$1mm $1')
+        .replace(/[^a-z0-9./+"-]+/g, ' ');
+      const words = cleanTokensStr.trim().split(/\s+/).filter(Boolean);
+
+      return {
+        idx,
+        code,
+        desc,
+        price,
+        cat,
+        barcode,
+        codeLower,
+        codeCompact: compactCode(code),
+        descLower,
+        catLower,
+        searchBlob: codeLower + ' ' + compactCode(code) + ' ' + cleanTokensStr,
+        words
+      };
+    });
+
+    // Category stats
+    const catCounts = new Map();
+    for (const p of PRODUCTS) {
+      catCounts.set(p.cat, (catCounts.get(p.cat) || 0) + 1);
+    }
+    const allCategories = Array.from(catCounts.keys()).sort((a, b) => {
+      if (a === 'Other') return 1;
+      if (b === 'Other') return -1;
+      return collator.compare(a, b);
+    });
+    const topCategories = Array.from(catCounts.entries())
+      .filter(([name]) => name !== 'Other')
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name]) => name);
+
+    // State
+    let state = {
+      query: '',
+      category: '',
+      sort: 'relevance',
+      incVat: false,
+      visibleCount: PAGE_SIZE,
+      usedFuzzy: false
+    };
+
+    // Elements
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const categorySelect = document.getElementById('categorySelect');
+    const quickPills = document.getElementById('quickPills');
+    const sortSelect = document.getElementById('sortSelect');
+    const vatExBtn = document.getElementById('vatExBtn');
+    const vatIncBtn = document.getElementById('vatIncBtn');
+    const hintsBar = document.getElementById('hintsBar');
+    const resultCount = document.getElementById('resultCount');
+    const cardList = document.getElementById('cardList');
+    const tableWrap = document.getElementById('tableWrap');
+    const tableBody = document.getElementById('tableBody');
+    const emptyState = document.getElementById('emptyState');
+    const emptyMsg = document.getElementById('emptyMsg');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    const loadMoreWrap = document.getElementById('loadMoreWrap');
+    const fabTop = document.getElementById('fabTop');
+    const toast = document.getElementById('toast');
+
+    // Populate category dropdown & quick pills
+    function initCategories() {
+      for (const cat of allCategories) {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = `${cat} (${catCounts.get(cat)})`;
+        categorySelect.appendChild(opt);
+      }
+
+      const makePill = (label, value) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pill' + (state.category === value ? ' active' : '');
+        btn.textContent = label;
+        btn.dataset.cat = value;
+        btn.addEventListener('click', () => {
+          setCategory(value);
+        });
+        return btn;
+      };
+
+      quickPills.appendChild(makePill('All', ''));
+      for (const cat of topCategories) {
+        quickPills.appendChild(makePill(cat, cat));
+      }
+    }
+
+    function syncCategoryUI() {
+      categorySelect.value = state.category;
+      for (const btn of quickPills.querySelectorAll('.pill')) {
+        btn.classList.toggle('active', btn.dataset.cat === state.category);
+      }
+    }
+
+    function setCategory(cat) {
+      state.category = cat;
+      state.visibleCount = PAGE_SIZE;
+      syncCategoryUI();
+      syncUrl();
+      render();
+    }
+
+    // Parse query into smart tokens
+    function parseQuery(raw) {
+      let q = (raw || '').trim().toLowerCase();
+      if (!q) return { raw: '', tokens: [] };
+      q = q.replace(/sds\s*\+/g, 'sds plus ');
+      // Split 12x350 or 12*350 into "12 350", keep decimals like 12.5 and fractions like 1/2
+      q = q.replace(/(\d)\s*[x×*]\s*(\d)/gi, '$1 $2');
+      const rawTokens = q.split(/\s+/).filter(Boolean);
+      const tokens = rawTokens.map((t) => {
+        const mmMatch = t.match(/^(\d+(?:\.\d+)?)mm$/i);
+        if (mmMatch) {
+          return { raw: t, numOnly: mmMatch[1], compact: t.replace(/[^a-z0-9]/g, '') };
+        }
+        return { raw: t, numOnly: null, compact: t.replace(/[^a-z0-9]/g, '') };
+      });
+      return { raw: raw.trim().toLowerCase(), tokens };
+    }
+
+    function escapeRegExp(s) {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function escapeHtml(s) {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function tokenMatchesProduct(tok, p) {
+      if (tok.numOnly) {
+        // Match "12mm" OR standalone number "12" (e.g. "12 X 350MM") so 12mm does not match 125mm
+        const re = new RegExp(`(?:^|[^0-9.])${escapeRegExp(tok.numOnly)}(?:\\s*mm|[^0-9.]|$)`, 'i');
+        return re.test(p.descLower) || re.test(p.codeLower);
+      }
+      if (/^\d{6,}$/.test(tok.raw) && p.barcode && p.barcode.includes(tok.raw)) return true;
+      if (p.searchBlob.includes(tok.raw)) return true;
+      if (tok.compact && tok.compact.length >= 2 && p.codeCompact.includes(tok.compact)) return true;
+      // Check synonym expansions
+      for (const [a, b] of SYNONYMS) {
+        if (tok.raw === a && p.searchBlob.includes(b)) return true;
+      }
+      return false;
+    }
+
+    function levenshtein1OrLess(a, b) {
+      if (Math.abs(a.length - b.length) > 1) return false;
+      if (a === b) return true;
+      let i = 0, j = 0, edits = 0;
+      while (i < a.length && j < b.length) {
+        if (a[i] === b[j]) {
+          i++; j++;
+        } else {
+          edits++;
+          if (edits > 1) return false;
+          if (a.length > b.length) i++;
+          else if (b.length > a.length) j++;
+          else { i++; j++; }
+        }
+      }
+      if (i < a.length || j < b.length) edits++;
+      return edits <= 1;
+    }
+
+    function fuzzyTokenMatchesProduct(tok, p) {
+      if (tokenMatchesProduct(tok, p)) return true;
+      if (tok.raw.length < 4 || /^\d+$/.test(tok.raw)) return false;
+      for (const w of p.words) {
+        if (w.length >= 4 && levenshtein1OrLess(tok.raw, w)) return true;
+      }
+      return false;
+    }
+
+    function scoreProduct(p, parsed) {
+      if (!parsed.tokens.length) return 0;
+      let score = 0;
+      const qRaw = parsed.raw;
+      const qCompact = compactCode(qRaw);
+
+      if (p.codeLower === qRaw || (qCompact && p.codeCompact === qCompact)) {
+        score += 1200;
+      } else if (p.codeLower.startsWith(qRaw) || (qCompact && p.codeCompact.startsWith(qCompact))) {
+        score += 700;
+      } else if (p.codeLower.includes(qRaw)) {
+        score += 400;
+      }
+
+      if (p.descLower.includes(qRaw)) {
+        score += 350;
+      }
+
+      for (const tok of parsed.tokens) {
+        if (p.codeLower.includes(tok.raw)) score += 90;
+        if (tok.numOnly) {
+          const wb = new RegExp(`(?:^|[^0-9.])${escapeRegExp(tok.numOnly)}(?:mm|[^0-9.]|$)`, 'i');
+          if (wb.test(p.descLower)) score += 80;
+          if (wb.test(p.codeLower)) score += 70;
+        } else {
+          const wb = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(tok.raw)}(?:[^a-z0-9]|$)`, 'i');
+          if (wb.test(p.descLower)) score += 60;
+          else if (p.descLower.includes(tok.raw)) score += 30;
+          else if (p.catLower.includes(tok.raw)) score += 20;
+        }
+      }
+      return score;
+    }
+
+    function highlightText(text, tokens) {
+      if (!tokens || !tokens.length) return escapeHtml(text);
+      const terms = [];
+      for (const t of tokens) {
+        if (t.numOnly) {
+          terms.push(t.numOnly + '(?:\\s*mm)?');
+        } else if (t.raw.length >= 2) {
+          terms.push(escapeRegExp(t.raw));
+        } else if (/^\d$/.test(t.raw)) {
+          terms.push('(?<!\\d)' + escapeRegExp(t.raw) + '(?!\\d)');
+        }
+      }
+      if (!terms.length) return escapeHtml(text);
+      // Sort longest first to avoid partial match stealing
+      terms.sort((a, b) => b.length - a.length);
+      let re;
+      try {
+        re = new RegExp(`(${terms.join('|')})`, 'gi');
+      } catch {
+        return escapeHtml(text);
+      }
+
+      let out = '';
+      let lastIdx = 0;
+      let match;
+      while ((match = re.exec(text)) !== null) {
+        if (match.index > lastIdx) {
+          out += escapeHtml(text.slice(lastIdx, match.index));
+        }
+        out += '<mark>' + escapeHtml(match[0]) + '</mark>';
+        lastIdx = re.lastIndex;
+        if (match[0].length === 0) {
+          re.lastIndex++;
+        }
+      }
+      if (lastIdx < text.length) {
+        out += escapeHtml(text.slice(lastIdx));
+      }
+      return out;
+    }
+
+    function formatPrice(val) {
+      if (!val || val <= 0) return { text: 'POA', isPoa: true };
+      const finalVal = state.incVat ? val * VAT_RATE : val;
+      return { text: '€' + finalVal.toFixed(2), isPoa: false };
+    }
+
+    function filterAndSort() {
+      const parsed = parseQuery(state.query);
+      let pool = state.category
+        ? PRODUCTS.filter((p) => p.cat === state.category)
+        : PRODUCTS;
+
+      state.usedFuzzy = false;
+      let matched;
+
+      if (parsed.tokens.length > 0) {
+        matched = pool.filter((p) => parsed.tokens.every((t) => tokenMatchesProduct(t, p)));
+        if (matched.length === 0) {
+          const fuzzy = pool.filter((p) => parsed.tokens.every((t) => fuzzyTokenMatchesProduct(t, p)));
+          if (fuzzy.length > 0) {
+            matched = fuzzy;
+            state.usedFuzzy = true;
+          }
+        }
+      } else {
+        matched = pool.slice();
+      }
+
+      const sortMode = state.sort;
+      if (sortMode === 'relevance' && parsed.tokens.length > 0) {
+        const scores = new Map();
+        for (const p of matched) {
+          scores.set(p.idx, scoreProduct(p, parsed));
+        }
+        matched.sort((a, b) => {
+          const diff = scores.get(b.idx) - scores.get(a.idx);
+          if (diff !== 0) return diff;
+          return collator.compare(a.desc, b.desc);
+        });
+      } else if (sortMode === 'price-asc') {
+        matched.sort((a, b) => {
+          const pa = a.price > 0 ? a.price : Number.MAX_SAFE_INTEGER;
+          const pb = b.price > 0 ? b.price : Number.MAX_SAFE_INTEGER;
+          return pa - pb || collator.compare(a.desc, b.desc);
+        });
+      } else if (sortMode === 'price-desc') {
+        matched.sort((a, b) => b.price - a.price || collator.compare(a.desc, b.desc));
+      } else if (sortMode === 'code') {
+        matched.sort((a, b) => collator.compare(a.code, b.code));
+      } else {
+        // Default natural size/description order
+        matched.sort((a, b) => collator.compare(a.desc, b.desc));
+      }
+
+      return { matched, parsed };
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    function copyCode(code, btnEl) {
+      const done = () => {
+        if (btnEl) {
+          btnEl.classList.add('copied');
+          setTimeout(() => btnEl.classList.remove('copied'), 1200);
+        }
+        showToast(`Copied code: ${code}`);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done).catch(() => fallbackCopy(code, done));
+      } else {
+        fallbackCopy(code, done);
+      }
+    }
+
+    function fallbackCopy(text, cb) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch {}
+      document.body.removeChild(ta);
+      cb();
+    }
+
+    const COPY_SVG = `<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
+
+    function render() {
+      const { matched, parsed } = filterAndSort();
+      const total = matched.length;
+      const showing = Math.min(total, state.visibleCount);
+      const vatLabel = state.incVat ? 'inc. VAT' : 'ex. VAT';
+
+      clearBtn.classList.toggle('visible', state.query.length > 0);
+      hintsBar.style.display = (state.query.length === 0 && !state.category) ? 'flex' : 'none';
+
+      // Status text
+      let countHtml = '';
+      if (total === PRODUCTS.length && !state.query && !state.category) {
+        countHtml = `Showing <strong>${showing.toLocaleString()}</strong> of <strong>${total.toLocaleString()}</strong> products`;
+      } else {
+        countHtml = `<strong>${total.toLocaleString()}</strong> ${total === 1 ? 'product' : 'products'} found`;
+        if (state.category) {
+          countHtml += ` in <strong>${escapeHtml(state.category)}</strong>`;
+        }
+        if (state.usedFuzzy) {
+          countHtml += `<span class="fuzzy-note">Closest match</span>`;
+        }
+      }
+      resultCount.innerHTML = countHtml;
+
+      if (total === 0) {
+        cardList.innerHTML = '';
+        tableBody.innerHTML = '';
+        tableWrap.style.display = 'none';
+        emptyState.style.display = 'block';
+        loadMoreWrap.style.display = 'none';
+        emptyMsg.textContent = state.category
+          ? `No products matched "${state.query}" inside ${state.category}. Try searching across all categories.`
+          : `No products matched "${state.query}". Try shorter words or just the size (e.g. "12mm" or "230").`;
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      tableWrap.style.display = '';
+
+      const slice = matched.slice(0, showing);
+      const tokens = parsed.tokens;
+
+      // Render mobile cards
+      const cardsHtml = [];
+      const rowsHtml = [];
+
+      for (const p of slice) {
+        const codeHtml = highlightText(p.code, tokens);
+        const descHtml = highlightText(p.desc, tokens);
+        const priceObj = formatPrice(p.price);
+        const priceHtml = priceObj.isPoa
+          ? `<span class="price-val poa">POA</span>`
+          : `<span class="price-val">${priceObj.text}</span><span class="price-vat">${vatLabel}</span>`;
+
+        cardsHtml.push(`
+          <article class="product-card">
+            <div class="card-top">
+              <button type="button" class="code-btn" data-code="${escapeHtml(p.code)}" title="Tap to copy product code">
+                <span>${codeHtml}</span>${COPY_SVG}
+              </button>
+              <div class="price-block">${priceHtml}</div>
+            </div>
+            <div class="card-desc">${descHtml}</div>
+          </article>
+        `);
+
+        rowsHtml.push(`
+          <tr>
+            <td class="col-code">
+              <button type="button" class="code-btn" data-code="${escapeHtml(p.code)}" title="Click to copy product code">
+                <span>${codeHtml}</span>${COPY_SVG}
+              </button>
+            </td>
+            <td class="col-desc">${descHtml}</td>
+            <td class="col-price num">
+              <div class="price-block">${priceHtml}</div>
+            </td>
+          </tr>
+        `);
+      }
+
+      cardList.innerHTML = cardsHtml.join('');
+      tableBody.innerHTML = rowsHtml.join('');
+
+      // Load more buttons
+      if (showing < total) {
+        const remaining = total - showing;
+        const nextBatch = Math.min(PAGE_SIZE, remaining);
+        loadMoreWrap.style.display = 'flex';
+        loadMoreWrap.innerHTML = `
+          <button type="button" id="loadMoreBtn" class="btn-secondary">
+            Show ${nextBatch} more (${remaining.toLocaleString()} remaining)
+          </button>
+          ${remaining <= 300 ? `<button type="button" id="showAllBtn" class="btn-secondary">Show all ${total.toLocaleString()}</button>` : ''}
+        `;
+        document.getElementById('loadMoreBtn').addEventListener('click', () => {
+          state.visibleCount += PAGE_SIZE;
+          render();
+        });
+        const showAllBtn = document.getElementById('showAllBtn');
+        if (showAllBtn) {
+          showAllBtn.addEventListener('click', () => {
+            state.visibleCount = total;
+            render();
+          });
+        }
+      } else {
+        loadMoreWrap.style.display = 'none';
+        loadMoreWrap.innerHTML = '';
+      }
+    }
+
+    function syncUrl() {
+      try {
+        const params = new URLSearchParams();
+        if (state.query) params.set('q', state.query);
+        if (state.category) params.set('cat', state.category);
+        if (state.incVat) params.set('vat', 'inc');
+        const qs = params.toString();
+        const newUrl = window.location.pathname + (qs ? '?' + qs : '');
+        window.history.replaceState(null, '', newUrl);
+      } catch {}
+    }
+
+    function readUrl() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const q = params.get('q') || '';
+        const cat = params.get('cat') || '';
+        const vat = params.get('vat') === 'inc';
+        if (q) {
+          state.query = q;
+          searchInput.value = q;
+        }
+        if (cat && catCounts.has(cat)) {
+          state.category = cat;
+        }
+        if (vat) {
+          state.incVat = true;
+          vatExBtn.setAttribute('aria-pressed', 'false');
+          vatIncBtn.setAttribute('aria-pressed', 'true');
+        }
+      } catch {}
+    }
+
+    // Event Listeners
+    searchInput.addEventListener('input', (e) => {
+      state.query = e.target.value;
+      state.visibleCount = PAGE_SIZE;
+      syncUrl();
+      render();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      state.query = '';
+      searchInput.value = '';
+      state.visibleCount = PAGE_SIZE;
+      syncUrl();
+      render();
+      searchInput.focus();
+    });
+
+    categorySelect.addEventListener('change', (e) => {
+      setCategory(e.target.value);
+    });
+
+    sortSelect.addEventListener('change', (e) => {
+      state.sort = e.target.value;
+      state.visibleCount = PAGE_SIZE;
+      render();
+    });
+
+    vatExBtn.addEventListener('click', () => {
+      state.incVat = false;
+      vatExBtn.setAttribute('aria-pressed', 'true');
+      vatIncBtn.setAttribute('aria-pressed', 'false');
+      syncUrl();
+      render();
+    });
+
+    vatIncBtn.addEventListener('click', () => {
+      state.incVat = true;
+      vatExBtn.setAttribute('aria-pressed', 'false');
+      vatIncBtn.setAttribute('aria-pressed', 'true');
+      syncUrl();
+      render();
+    });
+
+    hintsBar.addEventListener('click', (e) => {
+      const chip = e.target.closest('.hint-chip');
+      if (!chip) return;
+      state.query = chip.dataset.q || '';
+      searchInput.value = state.query;
+      state.visibleCount = PAGE_SIZE;
+      syncUrl();
+      render();
+    });
+
+    resetFiltersBtn.addEventListener('click', () => {
+      state.query = '';
+      state.category = '';
+      state.visibleCount = PAGE_SIZE;
+      searchInput.value = '';
+      syncCategoryUI();
+      syncUrl();
+      render();
+      searchInput.focus();
+    });
+
+    // Delegate click on copy code buttons
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.code-btn');
+      if (btn && btn.dataset.code) {
+        copyCode(btn.dataset.code, btn);
+      }
+    });
+
+    // Clickable desktop table headers to sort
+    document.querySelectorAll('.catalog-table thead th.sortable').forEach((th) => {
+      th.addEventListener('click', () => {
+        const targetSort = th.dataset.sort;
+        if (targetSort === 'price-asc' && state.sort === 'price-asc') {
+          state.sort = 'price-desc';
+        } else {
+          state.sort = targetSort;
+        }
+        sortSelect.value = state.sort;
+        render();
+      });
+    });
+
+    // Keyboard shortcuts: '/' focuses search, Escape clears
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput && document.activeElement.tagName !== 'SELECT') {
+        e.preventDefault();
+        searchInput.focus();
+      } else if (e.key === 'Escape' && document.activeElement === searchInput && state.query) {
+        clearBtn.click();
+      }
+    });
+
+    // Back-to-search FAB visibility
+    window.addEventListener('scroll', () => {
+      fabTop.classList.toggle('visible', window.scrollY > 360);
+    }, { passive: true });
+
+    fabTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => searchInput.focus(), 250);
+    });
+
+    // Init
+    initCategories();
+    readUrl();
+    syncCategoryUI();
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Product Catalogue</title>
+  <meta name="description" content="Fast, mobile-friendly searchable product catalogue and price list." />
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --surface: #ffffff;
+      --surface-subtle: #f8fafc;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --ink: #0f172a;
+      --ink-secondary: #475569;
+      --ink-muted: #64748b;
+      --accent: #0f172a;
+      --accent-hover: #1e293b;
+      --brand: #d97706;
+      --brand-bg: #fef3c7;
+      --brand-ink: #92400e;
+      --mark-bg: #fde68a;
+      --mark-ink: #0f172a;
+      --success: #047857;
+      --success-bg: #d1fae5;
+      --code-bg: #f1f5f9;
+      --code-border: #e2e8f0;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+      --radius: 12px;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+      min-height: 100vh;
+    }
+
+    /* Top Brand Bar */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: var(--ink);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-text h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      margin: 2px 0 0;
+      font-size: 12.5px;
+      color: var(--ink-muted);
+    }
+
+    /* VAT Segmented Toggle */
+    .vat-toggle {
+      display: inline-flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .vat-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--ink-secondary);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .vat-btn[aria-pressed="true"] {
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Sticky Search Header */
+    .search-dock {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      padding: 12px 0 10px;
+    }
+
+    .search-box-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      width: 20px;
+      height: 20px;
+      color: var(--ink-muted);
+      pointer-events: none;
+      transition: color 0.15s ease;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 52px;
+      padding: 0 48px 0 46px;
+      font-family: inherit;
+      font-size: 16px; /* >=16px avoids iOS zoom on focus */
+      font-weight: 500;
+      color: var(--ink);
+      background: var(--surface);
+      border: 2px solid var(--border-strong);
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .search-input::placeholder {
+      color: var(--ink-muted);
+      font-weight: 400;
+    }
+
+    .search-input:focus {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+    }
+
+    .search-input:focus + .clear-btn,
+    .search-box-wrap:focus-within .search-icon {
+      color: var(--ink);
+    }
+
+    .clear-btn {
+      position: absolute;
+      right: 8px;
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .clear-btn.visible {
+      display: flex;
+    }
+
+    .clear-btn:hover,
+    .clear-btn:focus-visible {
+      background: var(--code-bg);
+      color: var(--ink);
+    }
+
+    /* Filter Row: Category pills + Dropdown */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .cat-select-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .cat-select {
+      appearance: none;
+      -webkit-appearance: none;
+      height: 36px;
+      padding: 0 32px 0 12px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      cursor: pointer;
+      max-width: 210px;
+      text-overflow: ellipsis;
+    }
+
+    .cat-select:focus {
+      outline: none;
+      border-color: var(--ink);
+    }
+
+    .cat-chevron {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+      color: var(--ink-secondary);
+    }
+
+    .quick-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 2px 0;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .quick-pills::-webkit-scrollbar {
+      display: none;
+    }
+
+    .pill {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink-secondary);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+
+    .pill:hover {
+      border-color: var(--border-strong);
+      color: var(--ink);
+      background: var(--surface-subtle);
+    }
+
+    .pill.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Main Content */
+    .main {
+      padding: 14px 0 64px;
+    }
+
+    /* Example Hints Strip */
+    .hints-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+      color: var(--ink-muted);
+    }
+
+    .hint-chip {
+      appearance: none;
+      border: 1px dashed var(--border-strong);
+      background: var(--surface);
+      color: var(--ink-secondary);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .hint-chip:hover {
+      border-style: solid;
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    /* Status & Sort Bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .result-count {
+      font-size: 13.5px;
+      color: var(--ink-secondary);
+      font-weight: 500;
+    }
+
+    .result-count strong {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .fuzzy-note {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--brand-bg);
+      color: var(--brand-ink);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .sort-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sort-label {
+      font-size: 12.5px;
+      color: var(--ink-muted);
+    }
+
+    .sort-select {
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 6px 26px 6px 10px;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+    }
+
+    /* Mobile Card List (default < 720px) */
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 13px 15px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .code-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 7px;
+      padding: 5px 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      max-width: 100%;
+      word-break: break-all;
+      text-align: left;
+    }
+
+    .code-btn:hover {
+      border-color: var(--border-strong);
+      background: #e2e8f0;
+    }
+
+    .code-btn.copied {
+      background: var(--success-bg);
+      border-color: #6ee7b7;
+      color: var(--success);
+    }
+
+    .copy-icon {
+      width: 13px;
+      height: 13px;
+      opacity: 0.6;
+      flex-shrink: 0;
+    }
+
+    .price-block {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .price-val {
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+    }
+
+    .price-val.poa {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      background: var(--code-bg);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .price-vat {
+      display: block;
+      font-size: 11px;
+      color: var(--ink-muted);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .card-desc {
+      font-size: 15.5px;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.38;
+      word-break: break-word;
+    }
+
+    /* Desktop Table View (>= 720px) */
+    .table-wrap {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    table.catalog-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .catalog-table thead th {
+      background: var(--surface-subtle);
+      border-bottom: 1px solid var(--border);
+      padding: 11px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ink-secondary);
+      user-select: none;
+    }
+
+    .catalog-table thead th.sortable {
+      cursor: pointer;
+    }
+
+    .catalog-table thead th.sortable:hover {
+      color: var(--ink);
+      background: #f1f5f9;
+    }
+
+    .catalog-table thead th.num,
+    .catalog-table tbody td.num {
+      text-align: right;
+    }
+
+    .catalog-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s ease;
+    }
+
+    .catalog-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .catalog-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .catalog-table tbody td {
+      padding: 12px 16px;
+      vertical-align: middle;
+    }
+
+    .catalog-table tbody td.col-code {
+      width: 230px;
+      white-space: nowrap;
+    }
+
+    .catalog-table tbody td.col-desc {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .catalog-table tbody td.col-price {
+      width: 145px;
+      white-space: nowrap;
+    }
+
+    mark {
+      background: var(--mark-bg);
+      color: var(--mark-ink);
+      padding: 0 2px;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+
+    @media (min-width: 720px) {
+      .card-list {
+        display: none;
+      }
+      .table-wrap {
+        display: block;
+      }
+      .brand-text h1 {
+        font-size: 20px;
+      }
+    }
+
+    /* Load More & Empty State */
+    .load-more-wrap {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-subtle);
+      border-color: var(--ink);
+    }
+
+    .btn-primary {
+      appearance: none;
+      border: none;
+      background: var(--ink);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 11px 22px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .empty-state {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .empty-state h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      color: var(--ink);
+    }
+
+    .empty-state p {
+      margin: 0 0 18px;
+      font-size: 14px;
+      color: var(--ink-muted);
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Floating Back to Search Button */
+    .fab-top {
+      position: fixed;
+      right: 18px;
+      bottom: 20px;
+      z-index: 40;
+      appearance: none;
+      border: none;
+      background: var(--ink);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 11px 16px;
+      border-radius: 999px;
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .fab-top.visible {
+      display: inline-flex;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--ink);
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 999px;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 50;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">PC</div>
+          <div class="brand-text">
+            <h1>Product Catalogue</h1>
+            <p id="subtitle">1,510 products · Prices in EUR</p>
+          </div>
+        </div>
+        <div class="vat-toggle" role="group" aria-label="VAT display">
+          <button type="button" class="vat-btn" id="vatExBtn" aria-pressed="true">Ex. VAT</button>
+          <button type="button" class="vat-btn" id="vatIncBtn" aria-pressed="false">Inc. 23% VAT</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="search-dock" aria-label="Search and filter">
+    <div class="container">
+      <div class="search-box-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <input
+          id="searchInput"
+          class="search-input"
+          type="search"
+          inputmode="search"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder='Search by product, size, or code (e.g. "12mm sds", "tct 230", "bp-115")'
+          aria-label="Search products by code, description, or size"
+        />
+        <button type="button" id="clearBtn" class="clear-btn" aria-label="Clear search" title="Clear search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="cat-select-wrap">
+          <select id="categorySelect" class="cat-select" aria-label="Filter by category">
+            <option value="">All Categories</option>
+          </select>
+          <svg class="cat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </div>
+        <div id="quickPills" class="quick-pills" role="tablist" aria-label="Popular categories"></div>
+      </div>
+    </div>
+  </section>
+
+  <main class="main">
+    <div class="container">
+      <div id="hintsBar" class="hints-bar">
+        <span>Quick try:</span>
+        <button type="button" class="hint-chip" data-q="12mm sds">12mm sds</button>
+        <button type="button" class="hint-chip" data-q="tct 230">tct 230</button>
+        <button type="button" class="hint-chip" data-q="holesaw">holesaw</button>
+        <button type="button" class="hint-chip" data-q="wire brush">wire brush</button>
+        <button type="button" class="hint-chip" data-q="bp-115">bp-115</button>
+      </div>
+
+      <div class="status-bar">
+        <div id="resultCount" class="result-count">Loading products...</div>
+        <div class="sort-wrap">
+          <label for="sortSelect" class="sort-label">Sort:</label>
+          <select id="sortSelect" class="sort-select">
+            <option value="relevance">Best Match</option>
+            <option value="natural">Size / Description</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="code">Code: A–Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="cardList" class="card-list" aria-live="polite"></div>
+
+      <div id="tableWrap" class="table-wrap">
+        <table class="catalog-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="code">Product Code</th>
+              <th class="sortable" data-sort="natural">Description</th>
+              <th class="sortable num" data-sort="price-asc">Price</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <h2>No matching products found</h2>
+        <p id="emptyMsg">Try fewer words, check the product code, or clear the category filter.</p>
+        <button type="button" id="resetFiltersBtn" class="btn-primary">Show all products</button>
+      </div>
+
+      <div id="loadMoreWrap" class="load-more-wrap" style="display: none;"></div>
+    </div>
+  </main>
+
+  <button type="button" id="fabTop" class="fab-top" aria-label="Back to search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m18 15-6-6-6 6"></path>
+    </svg>
+    Search
+  </button>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // Embedded product catalog: [code, description, priceExVat, category, barcode]
+    const RAW_PRODUCTS = [["BP-115-M14","115MM BACKING PAD M14 NUT",6.62,"Abrasives","2008033002117"],["BP-125-DRL6","125MM BACKING PAD FOR DRILL 6MMSHAFT",4.0,"Abrasives","2008032001005"],["BP-125-M14","125MM BACKING PAD M14 NUT",6.62,"Abrasives","2008033002116"],["BP-150-V6HSP","150MM VELCRO 6 HOLE SUPER PAD 5/16",19.5,"Abrasives","4870289500500"],["BP-150-M14-V","150MM VELCRO BACKING PAD M14X2",12.0,"Abrasives","2008033003207"],["WBN-150-V","150MM VELCRO WOOL BONNET",6.9,"Abrasives","2008031002011"],["CPF-150-V","150 X 25MM COMPOUND POLISHING FOAM VELCRO",5.87,"Abrasives","2008032100201"],["CPF-150-M14-O","150 X 50MM COMPOUND FOAM M14X2 NUT ORANGE",9.2,"Abrasives","2008031003016"],["CPF-150-M14-W","150 X 50MM COMPOUND FOAM M14X2 NUT WHITE",9.2,"Abrasives","2008031003015"],["BP-180-M14","180MM BACKING PAD M14 NUT",8.94,"Abrasives","5021526116322"],["BP-180-M14-RE","180MM ROUND EDGED BACKING PAD M14X2 FOR TIE ON MOPS",17.0,"Abrasives","2008033002124"],["WBN-180-TO","180MM TIE ON WOOL BONNET",8.0,"Abrasives","2008031002003"],["BP-180-M14-V","180MM VELCRO BACKING PAD M14X2",20.0,"Abrasives","2008033002109"],["SP-180-V","180MM VELCRO SPONGE",7.0,"Abrasives","2008032200104"],["WBN-180-V","180MM VELCRO WOOL BONNET",8.0,"Abrasives","2008033002012"],["BP-200-M14-RE","200MM ROUND EDGED BACKING PAD M14X2 FOR TIE ON MOPS",18.0,"Abrasives","2008033002125"],["BP-200-M14-V","200MM VELCRO BACKING PAD M14X2",21.59,"Abrasives","2008033002032"],["WBN-200-V","200MM VELCRO WOOL BONNET",9.5,"Abrasives","5021526402302"],["WBN-230-TO","230MM TIE ON WOOL BONNET",9.25,"Abrasives","5021526400254"],["BGS-150-R","150 X 19MM BENCH GRINDER STONE ROUGH",7.0,"Abrasives","no barcode"],["BGS-150-S","150 X 19MM BENCH GRINDER STONE SMOOTH",7.0,"Abrasives","no barcode"],["BGS-200-R","200 X 25MM BENCH GRINDER STONE ROUGH",9.0,"Abrasives","no barcode"],["BGS-200-S","200 X 25MM BENCH GRINDER STONE SMOOTH",9.0,"Abrasives","no barcode"],["BGS-250-R","250 X 25MM BENCH GRINDER STONE ROUGH",10.0,"Abrasives","5391100077050"],["BGS-250-S","250 X 25MM BENCH GRINDER STONE SMOOTH",10.0,"Abrasives","5391100077067"],["CD-115-DPC-M","115MM DPC METAL CUTTING DISCS",0.58,"Abrasives","111525224212"],["CD-115-NF-SS","115MM NARROW STAINLESS & MILD STEEL FLAT CUTTING DISC",0.75,"Abrasives","111535224219"],["CD-230-DPC-M","230MM PREMIUM DPC METAL CUTTING DISCS",1.46,"Abrasives","112525224219"],["CD-230-NF-SS","230MM PREMIUM STAINLESS & MILD STEEL FLAT CUTTING DISC",1.64,"Abrasives","8017064006925"],["CD-300-F-M","300 X 20MM METAL FLAT CUTTING DISC",2.56,"Abrasives","4870289500807"],["CD-355-F-SS","355MM STAINLESS & MILD STEEL FLAT CUTTING DISC",3.5,"Abrasives","111535224219"],["FD-115-SS-120G","115MM STAINLESS STEEL FLAP DISC 120G",1.9,"Abrasives","4870289500234"],["FD-115-SS-40G","115MM STAINLESS STEEL FLAP DISC 40G",1.9,"Abrasives","4870289500067"],["FD-115-SS-60G","115MM STAINLESS STEEL FLAP DISC 60G",1.9,"Abrasives","4870289500074"],["FD-115-SS-80G","115MM STAINLESS STEEL FLAP DISC 80G",1.9,"Abrasives","9003174532125"],["GD-115-DPC-M","115MM METAL DEPRESSED CENTRE GRINDING DISC",1.02,"Abrasives","111560222716"],["PSD-115-F","115 X 22.23MM POLY STRIP DISCS BLACK FINE",3.5,"Abrasives","4870289500302"],["PSD-115-R","115 X 22.23MM POLY STRIP DISCS BLUE ROUGH",3.5,"Abrasives","4870289500319"],["PP-115-SS-F","115 X 22.23MM S/S FINE POLISHING PAD",2.85,"Abrasives","4870289500098"],["PP-115-SS-M","115 X 22.23MM S/S MEDIUM POLISHING PAD",2.85,"Abrasives","4870289500081"],["SSD-115-16G","115 X 22.23MM STONE SANDING DISC 16G",1.12,"Abrasives","no barcode"],["SSD-115-36G","115 X 22.23MM STONE SANDING DISC 36G",1.12,"Abrasives","no barcode"],["SSD-115-60G","115 X 22.23MM STONE SANDING DISC 60G",1.12,"Abrasives","no barcode"],["SSCW-115-DT","115 X 22.23MM DIAMOND TURBO STONE SANDING CUP WHEEL",13.5,"Abrasives","3255660001332"],["SSD-115-24G","115 X 22.23MM STONE SANDING DISC 24G",1.12,"Abrasives","no barcode"],["SSD-178-16G","178 X 22.23MM STONE SANDING DISC 16G",2.7,"Abrasives","no barcode"],["SSD-178-24G","178 X 22.23MM STONE SANDING DISC 24G",2.7,"Abrasives","no barcode"],["SSD-178-36G","178 X 22.23MM STONE SANDING DISC 36G",2.7,"Abrasives","no barcode"],["SSD-178-60G","178 X 22.23MM STONE SANDING DISC 60G",2.7,"Abrasives","no barcode"],["SSCW-180-DT","180 X 22.23MM DIAMOND TURBO STONE SANDING CUP WHEEL",30.0,"Abrasives","8004601008542"],["WB-100-6-FD","100 X 6MM FLAT DRILL WIRE BRUSH",1.5,"Abrasives","no barcode"],["WB-115-BCS","115MM BEVELED CRIMPED WIRE BRUSH (SOFT)",6.0,"Abrasives","692802541344"],["WB-115-BKH","115MM BEVELED KNOTTED WIRE BRUSH (HARD)",6.0,"Abrasives","4870289500142"],["WB-115-FK-MS","115 X 22.23MM FLAT KNOTTED MILD STEEL WIRE BRUSH",5.19,"Abrasives","4870289500050"],["WB-115-FK-SS","115 X 22.23MM S/S FLAT KNOTTED WIRE BRUSH",9.0,"Abrasives","692802540338"],["WB-115-N-FK-MS","115 X 22.23MM FLAT KNOTTED MILD STEEL WIRE BRUSH NARROW",5.19,"Abrasives","4870289500258"],["WB-125-M14-K-MB","125MM X M14 KNOTTED WIRE BRUSH WITH METAL BAND",6.9,"Abrasives","no barcode"],["WB-125-M14-H","125MM X M14 WIRE BRUSH (HARD)",7.18,"Abrasives","4870289500043"],["WB-125-M14-S","125MM X M14 WIRE BRUSH (SOFT)",6.9,"Abrasives","4870289500029"],["WB-125-M14-S-SS","125MM X M14 WIRE BRUSH (SOFT) STAINLESS STEEL",8.0,"Abrasives","4870289500128"],["WB-150-BG","150MM BENCH GRINDER WIRE BRUSH",7.0,"Abrasives","4870289500173"],["WB-150-M14-FK","150MM X M14 FLAT KNOTTED WIRE BRUSH",7.5,"Abrasives","692802540506"],["WB-175-M14-FK","175MM X M14 FLAT KNOTTED WIRE BRUSH",11.0,"Abrasives","692802541345"],["WB-200-BG","200MM BENCH GRINDER WIRE BRUSH",9.0,"Abrasives","4870289500180"],["WB-250-BG","250MM BENCH GRINDER WIRE BRUSH",15.0,"Abrasives","692802540317"],["WB-36PC-SM","36 PIECE SHAFT MOUNTED ASSORTED WIRE BRUSH",34.5,"Abrasives","4870289500203"],["WSB-5RW","5 ROW SCRATCH WIRE BRUSH",1.32,"Abrasives","4870289500128"],["WB-75X6-CD","75 X 6MM CUP DRILL WIRE BRUSH",1.5,"Abrasives","no barcode"],["WB-75X6-FD","75 X 6MM FLAT DRILL WIRE BRUSH",1.4,"Abrasives","4870289500166"],["WB-75-M14-H","75MM X M14 WIRE BRUSH (HARD)",3.45,"Abrasives","4870289500036"],["WB-75-M14-S","75MM X M14 WIRE BRUSH (SOFT)",2.88,"Abrasives","4870289500012"],["WB-75-M14-S-B","75MM X M14 WIRE BRUSH (SOFT) BULK",2.88,"Abrasives","no barcode"],["WB-75-M14-S-SS","75MM X M14 WIRE BRUSH (SOFT) STAINLESS STEEL",4.0,"Abrasives","4870289500005"],["WSB-PH-MS","MILD STEEL SCRATCH BRUSH PLASTIC HANDLE",1.25,"Abrasives","4870289500104"],["WSB-PH-SS","STAINLESS STEEL SCRATCH BR. PLASTIC HANDLE",2.6,"Abrasives","6928025480024"],["AK-9PC-BE-L","9 PIECE BALL END ALLEN KEY SET LONG",6.0,"Allen Keys","2000402203083"],["AK-9PC-BE-S","9 PIECE BALL END ALLEN KEY SET SHORT",5.2,"Allen Keys","6988426731019"],["AK-9PC-FLD","9 PIECE 1.5MM - 10MM FOLDING ALLEN KEY SET",3.5,"Allen Keys","6988426721836"],["AK-9PC","9 PIECE 1.5MM - 10MM ALLEN KEY SET",3.0,"Allen Keys","6988426731026"],["AK-9PC-LNG","9 PIECE LONG ALLEN KEY SET",5.5,"Allen Keys","2000402203083"],["AK-10PC-TH","10 PIECE 2MM - 10MM ALLEN KEY SET WITH T HANDLE",6.0,"Allen Keys","6988426763584"],["AK-10PC-TH-TRX","10 PIECE TORX KEY SET T HANDLE",6.5,"Allen Keys","6988426763669"],["AK-9PC-L-TRX","9 PIECE LONG TORX KEY SET",5.0,"Allen Keys","2000402203083"],["BLT-HOLD-13","BELT TOOL HOLDER (13 POCKET)",5.0,"Hand Tools","5000881653888"],["CB-A6-EC","A06X18X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND",7.23,"Carbide Burr","5050028042115"],["CB-A6-NEC","A06X18X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND NEC",7.33,"Carbide Burr","8004601029240"],["CB-A8-NEC","A08X20X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND NEC",7.38,"Carbide Burr","8809280462222"],["CB-A10-NEC","A10X20X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND NEC",8.9,"Carbide Burr","80046601029011"],["CB-A12-NEC","A12X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND NEC",10.22,"Carbide Burr","5050018042122"],["CB-A16-NEC","A16X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND NEC",18.15,"Carbide Burr","921010001101"],["CB-A8-EC","A08X20X70 CARBIDE BURR DOUBLE CUT CNC GR END CUT",8.38,"Carbide Burr","8809280462222"],["CB-A10-EC","A10X20X70 CARBIDE BURR DOUBLE CUT CNC GR END CUT",9.2,"Carbide Burr","2008033012111"],["CB-A12-EC","A12X25X70 CARBIDE BURR DOUBLE CUT CNC GR END CUT",14.8,"Carbide Burr","5050028042113"],["CB-A16-EC","A1625X70 CARBIDE BURR DOUBLE CUT CNC GR END CUT",25.5,"Carbide Burr","5791863815232"],["CB-C10","C10X20X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND",9.53,"Carbide Burr","7398022988077"],["CB-C12","C12X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND",14.5,"Carbide Burr","5050028042117"],["CB-C14","C14X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND",19.0,"Carbide Burr","8809280462223"],["CB-10PC","10 PIECE CARBIDE BURR SET 3MM SHAFT",25.0,"Carbide Burr","57918638153237"],["CB-10PC-6","10 PIECE CARBIDE BURR SET 3MM SHAFT 6MM HEAD",28.35,"Carbide Burr","5791863815323"],["CB-5PC","5 PIECE CARBIDE BURR SET",57.82,"Carbide Burr","57918638153234"],["CB-8PC","8 PIECE CARBIDE BURR SET",92.0,"Carbide Burr","57918638153236"],["CB-8PC-VH","8 PIECE CARBIDE BURR SET VARIABLE HEAD",59.36,"Carbide Burr","5918638153235"],["CB-A6-EC-S","A06X20X6X50MM SOLID ROTARY CARBIDE BURR 2-TYPE TEETH END CUT",8.67,"Carbide Burr","out of stock"],["CB-A10-EC-S","A10X20X6X65MM SOLID ROTARY CARBIDE BURR 2-TYPE TEETH END CUT",9.45,"Carbide Burr","5050028042114"],["CB-A12-EC-S","A12X25X6X70MM SOLID ROTARY CARBIDE BURR 2-TYPE TEETH END CUT",13.65,"Carbide Burr","5050028042113"],["CB-A12-NEC-S","A12X25X6X70MM SOLID ROTARY CARBIDE BURR 2-TYPE TEETH NO E.C.",12.71,"Carbide Burr","5050018042123"],["CB-A16-NEC-S","A16X25X6X70MM SOLID ROTARY CARBIDE BURR 2-TYPE TEETH NO E.C.",21.0,"Carbide Burr","no barcode"],["CB-C12-S","C12X25X6X70MM SOLID ROTARY CARBIDE BURR 2-TYPE TEETH",12.96,"Carbide Burr","5050028042117"],["CB-D12","D12X10.8X56 CARBIDE BURR DOUBLE CUT CNC GROUND",9.95,"Carbide Burr","7890203600830"],["CB-D14","D14X12X57 CARBIDE BURR DOUBLE CUT CNC GROUND",13.63,"Carbide Burr","7890203600830"],["CB-D16","D16X14.4X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND",13.92,"Carbide Burr","7890203600830"],["CB-F6","F06X18X63 CARBIDE BURR DOUBLE CUT CNC GROUND",7.03,"Carbide Burr","8004601020094"],["CB-F8","F08X20X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND",7.59,"Carbide Burr","3255667032247"],["CB-F10","F10X20X70 CARBIDE BURR DOUBLE CUT CNC GROUND",7.69,"Carbide Burr","8809280462225"],["CB-F12-S","F12X25X6X70 SOLID ROTARY CARBIDE BURR 2-TYPE TEETH",10.88,"Carbide Burr","5050028042116"],["CB-F12","F12X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND",11.0,"Carbide Burr","out of stock"],["CB-G6","G0618X58 CARBIDE BURR DOUBLE CUT CNC GROUND",6.54,"Carbide Burr","8004601001239"],["CB-G8","G0820X70 CARBIDE BURR DOUBLE CUT CNC GROUND",7.54,"Carbide Burr","2008033002112"],["CB-G12","G12X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND",11.0,"Carbide Burr","3255667002714"],["CB-H10","H10X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND",7.88,"Carbide Burr","8806085987451"],["CB-H12","H12X32X77 CARBIDE BURR DOUBLE CUT CNC GROUND",15.0,"Carbide Burr","3255667079341"],["CB-J12","J12X10.4X70 CARBIDE BURR DOUBLE CUT CNC GROUND",8.59,"Carbide Burr","7890203600832"],["CB-K6","K06X3X6X55 CARBIDE BURR DOUBLE CUT CNC GROUND",4.96,"Carbide Burr","8806085987450"],["CB-L10","L10X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND",7.85,"Carbide Burr","6932060902069"],["CB-L12","L12X28X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND",11.6,"Carbide Burr","7890203600834"],["CB-M6","M06X18X6X63 CARBIDE BURR DOUBLE CUT CNC GROUND",5.33,"Carbide Burr","502156400254"],["CB-M8","M08X20X65 CARBIDE BURR DOUBLE CUT CNC GROUND",8.11,"Carbide Burr","7890203600830"],["CB-M10","M10X20X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND",10.0,"Carbide Burr","3255660169711"],["CB-M12","M12X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND",9.43,"Carbide Burr","5791863815249"],["CB-M14","M14X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND",13.63,"Carbide Burr","5791863815249"],["CB-M16","M16X25X70 CARBIDE BURR DOUBLE CUT CNC GROUND",15.73,"Carbide Burr","7890203600835"],["CB-N12","N12X13X58 CARBIDE BURR DOUBLE CUT CNC GROUND",8.5,"Carbide Burr","7890203600833"],["CB-T12","T12X4X70X6 CARBIDE BURR DOUBLE CUT CNC GROUND",6.5,"Carbide Burr","7890203600831"],["CB-T16","T16X6X51X6 CARBIDE BURR DOUBLE CUT CNC GROUND",8.9,"Carbide Burr","7890203600830"],["CB-W8","W08X13X58 CARBIDE BURR DOUBLE CUT CNC GROUND",7.85,"Carbide Burr","7890203600830"],["CB-W12","W12X25X6X70 CARBIDE BURR DOUBLE CUT CNC GROUND",14.33,"Carbide Burr","5021526361708"],["CBS-BOS-115","BOSCH 115MM MINI GRINDER CARBON BRUSH SET",3.18,"Carbon Brushes","3100507854506"],["CBS-BOS-125","BOSCH 125MM MINI GRINDER CARBON BRUSH SET",3.5,"Carbon Brushes","3006046854604"],["CBS-BOS-24V","BOSCH 24V CORDLESS DRILL BRUSH SET",6.5,"Carbon Brushes","3100637856104"],["CBS-BOS-DRL","BOSCH DRILL CARBON BRUSH SET",2.1,"Carbon Brushes","3006020854507"],["CBS-BOS-230-220V","BOSCH GWS 230/23-24 GRINDER CARBON BRUSH SET 220V",4.5,"Carbon Brushes","3006025854601"],["CBS-BOS-230-110V","BOSCH GWS23/24-230 ANGLE GRINDER CARBON BRUSH SET 110V",4.5,"Carbon Brushes","3006025854601"],["CBS-BOS-MG","BOSCH MINI GRINDER GWS7 ETC",2.5,"Carbon Brushes","3006804854501"],["CBS-BOS-230-O","BOSCH OLD 230MM ANGLE GRINDER CARBON BRUSH SET",4.5,"Carbon Brushes","3006010854609"],["CBS-BOS-SGH","BOSCH STRAIGHT GRINDER & HAMMER CARBON BRUSH SET",4.44,"Carbon Brushes","3006013854606"],["CBS-DW-BK20","DEWALT BK20 MINI GRINDER/DRILL CARBON BRUSH SET",4.0,"Carbon Brushes","3024020854600"],["CBS-DW-DW708","DEWALT DW708 MITRE SAW CARBON BRUSH SET",6.0,"Carbon Brushes","3024018854605"],["CBS-HTC-HMR","HITACHI HAMMER CARBON BRUSH SET",4.44,"Carbon Brushes","3099038854607"],["CBS-HTC-MGD","HITACHI MINI GRINDER & DRILL CARBON BRUSH SET",1.91,"Carbon Brushes","3099021854409"],["CBS-HTC-230-N","HITACHI NEW 230MM ANGLE GRINDER CARBON BRUSH SET",5.0,"Carbon Brushes","3099061854605"],["CBS-HTC-HMR-N","HITACHI NEW HAMMER CARBON BRUSH SET",5.0,"Carbon Brushes","3099043854609"],["CBS-HTC-MG-N","HITACHI NEW MINI GRINDER BRUSH SET",5.0,"Carbon Brushes","3100580855001"],["CBS-HTC-230-O","HITACHI OLD 230MM ANGLE GRINDER CARBON BRUSH SET",3.81,"Carbon Brushes","3099034854601"],["CBS-KNG-O","KANGO 900/950 CARBON BRUSH SET",4.0,"Carbon Brushes","3044001854504"],["CBS-KNG-N","KANGO NEW 900/950 CARBON BRUSH SET",4.0,"Carbon Brushes","3100378855909"],["CBS-MKT-203-4","MAKITA CB 203/204 CARBON BRUSH SET",4.44,"Carbon Brushes","3000203854605"],["CBS-MKT-105","MAKITA CB105 CARBON BRUSH SET",4.44,"Carbon Brushes","3000105854604"],["CBS-MKT-153","MAKITA CB153 OLD ANGLE GRINDER CARBON BRUSH SET",2.54,"Carbon Brushes","3000153854403"],["CBS-MKT-155","MAKITA CB155 CARBON BRUSH SET",3.18,"Carbon Brushes","3000155854609"],["CBS-MKT-304","MAKITA CB304 CARBON BRUSH SET",2.75,"Carbon Brushes","3000304854405"],["CBS-MKT-325","MAKITA CB325 MINI GRINDER CARBON BRUSH SET",3.25,"Carbon Brushes","3100696854509"],["CBS-MKT-411","MAKITA CB411 CARBON BRUSH SET",2.5,"Carbon Brushes","3000411854404"],["CBS-MKT-419","MAKITA CB419 CARBON BRUSH SET",2.5,"Carbon Brushes","3000419854406"],["CBS-MKT-51","MAKITA CB51 DRILL CARBON BRUSH SET",2.0,"Carbon Brushes","3000051854406"],["CBS-MWK-MG","MILWAUKEE & AEG MINI GRINDER ETC. CARBON BRUSH SET",4.0,"Carbon Brushes","3019034854609"],["CBS-RYB-061H","RYOBI 30-02-061H MINI GRINDER & DRILL BRUSH SET",3.4,"Carbon Brushes","3002061854506"],["CBS-RYB-068H","RYOBI 30-02-068H 180MM+230MM ANGLE GRINDER CARBON BRUSH SET",3.5,"Carbon Brushes","3002068854509"],["CBS-RYB-078H","RYOBI 30-02-078H HAMMER CARBON BRUSH SET",3.5,"Carbon Brushes","3002078854506"],["CBS-RYB-093H","RYOBI 30-02-093H GRINDER/HAMMER CARBON BRUSH SET",3.5,"Carbon Brushes","3002093854505"],["CBS-RYB-076H","RYOBI ED450 HAMMER BRUSH SET 30-02-076-H",5.0,"Carbon Brushes","3002076854508"],["CBS-STY-230","STAYER 230MM ANGLE GRINDER CARBON BRUSH SET",4.44,"Carbon Brushes","3100009854608"],["CBS-UNV","UNIVERSAL CARBON BRUSH SET",2.54,"Carbon Brushes","3100068854502"],["ARB-MT1-B16","MT1-B16 ARBOR",4.2,"Chucks","5606026221341"],["ARB-MT2-B16","MT2-B16 ARBOR",4.73,"Chucks","no barcode"],["ARB-MT2-B18","MT2-B18 ARBOR",4.73,"Chucks","no barcode"],["ARB-MT3-B16","MT3-B16 ARBOR",5.86,"Chucks","no barcode"],["ARB-MT3-B18","MT3-B18 ARBOR",5.86,"Chucks","no barcode"],["ARB-MT3-B22","MT3-B22 ARBOR",6.2,"Chucks","no barcode"],["ARB-MT4-B22","MT4-B22 ARBOR",7.61,"Chucks","no barcode"],["CHK-K-10","10MM CHUCK KEY",1.27,"Chucks","no barcode"],["CHK-K-13-EU","13MM EUROPEAN TYPE CHUCK KEY",1.59,"Chucks","3164140003271"],["CHK-K-13-POFT","13MM POFT CHUCK KEY",1.59,"Chucks","8011017780702"],["CHK-K-16","16MM CHUCK KEY",1.91,"Chucks","no barcode"],["CHK-K-20","20MM CHUCK KEY",2.54,"Chucks","no barcode"],["CHK-K-20-PLC","20MM CHUCK KEY PLASTIC COVERED",3.04,"Chucks","no barcode"],["CHK-S-LHT","LONG LEFT HAND THREAD CHUCK SCREW",0.89,"Chucks","no barcode"],["CHK-S-REV-SDS","REVERSIBLE SCREWS FOR SDS ADAPTOR",0.89,"Chucks","no barcode"],["CHK-S-LHT-SHRT","SHORT LEFT HAND THREAD SCREW",0.89,"Chucks","no barcode"],["DRFT-MT1-2","MT1-2 DRIFT FOR REMOVING ARBOR FROM BENCH DRILL",3.68,"Chucks","no barcode"],["DRFT-MT3","MT3 DRIFT FOR REMOVING ARBOR FROM BENCH DRILL",4.2,"Chucks","no barcode"],["DRFT-MT4","MT4 DRIFT FOR REMOVING ARBOR FROM BENCH DRILL",5.25,"Chucks","no barcode"],["CHK-10-24-K","10MM CAPACITY 3/8X24UNF KEYED CHUCK",5.49,"Chucks","5399980080009"],["CHK-10-24-K-MALE","10MM CAPACITY 3/8X24UNF KEYED MALE CHUCK",8.25,"Chucks","5606026115060"],["CHK-10-B12-K","10MM CAPACITY B12 KEYED CHUCK",9.39,"Chucks","no barcode"],["CHK-13-20-K-SDS","13MM CAPACITY 1/2X20 KEYED CHUCK INC. SDS ADAPTOR",9.0,"Chucks","5606026115046"],["CHK-13-20-K","13MM CAPACITY 1/2X20UNF KEYED CHUCK",5.81,"Chucks","out of stock"],["CHK-13-24-K","13MM CAPACITY 3/8X24UNF KEYED CHUCK",11.0,"Chucks","5606026115039"],["CHK-13-B16-K","13MM CAPACITY B16 KEYED CHUCK",12.5,"Chucks","5606026114360"],["CHK-16-20-K","16MM CAPACITY 1/2X20UNF KEYED CHUCK",15.87,"Chucks","5606026103357"],["CHK-16-16-K","16MM CAPACITY 5/8X16UNF KEYED CHUCK",15.87,"Chucks","5606026114353"],["CHK-16-B18-K","16MM CAPACITY B18 KEYED CHUCK",15.87,"Chucks","5398000022265"],["CHK-20-B22-K-HD","20MM CAPACITY B22 KEYED CHUCK HEAVY DUTY",38.08,"Chucks","no barcode"],["CHK-16-B16-K","5/8\" B16 KEYED CHUCK",15.87,"Chucks","no barcode"],["CHK-10-24-P-KL","10MM CAPACITY 3/8X24 PLASTIC KEYLESS CHUCK",8.25,"Chucks","5606026115169"],["CHK-13-20-M-KL-EHD","13MM CAP. 1/2X20 EX HEAVY DUTY METAL KEYLESS CHUCK LOCK",18.3,"Chucks","5606026115145"],["CHK-13-20-M-KL-HD","13MM CAPACITY 1/2X20 HEAVY DUTY METAL KEYLESS CHUCK",12.5,"Chucks","5606026115145"],["CHK-13-20-M-KL-SDS","13MM CAPACITY 1/2X20 METAL KEYLESS CHUCK WITH LOCK&SDS+ ADP.",14.0,"Chucks","5606026115138"],["CHK-13-20-M-KL-SS","13MM CAPACITY 1/2X20 SINGLE SKIN H/DUTY METAL KEYLESS CHUCK",12.5,"Chucks","5606026115145"],["CHK-13-20-KL-MALE","13MM CAPACITY 1/2X20UNF MALE CHUCK",9.0,"Chucks","5606026115022"],["CHK-13-B16-M-KL","13MM CAPACITY 13XB16 METAL KEYLESS CHUCK",19.04,"Chucks","no barcode"],["CHK-13-24-P-KL","13MM CAPACITY 3/8X24UNF PLASTIC KEYLESS CHUCK WITH LOCK",11.0,"Chucks","5606026115145"],["CHK-16-B16-M-KL","16MM CAPACITY 16XB16 METAL KEYLESS CHUCK",25.0,"Chucks","no barcode"],["CHK-20-B22-M-KL-HD","20MM X B22 HEAVY DUTY METAL KEYLESS CHUCK",38.0,"Chucks","no barcode"],["REDSLV-2-1","2 TO 1 REDUCING SLEEVE",5.18,"Chucks","no barcode"],["REDSLV-3-2","3 TO 2 REDUCING SLEEVE",5.86,"Chucks","no barcode"],["REDSLV-4-2","4 TO 2 REDUCING SLEEVE",8.14,"Chucks","no barcode"],["REDSLV-4-3","4 TO 3 REDUCING SLEEVE",7.4,"Chucks","no barcode"],["REDSLV-5-4","5 TO 4 REDUCING SLEEVE",10.92,"Chucks","no barcode"],["SLV-MT2-265","265MM MT2 ARBOR TO MT2 SLEEVE",9.5,"Chucks","no barcode"],["SLV-MT3-365","365MM MT3 ARBOR TO MT3 SLEEVE",16.5,"Chucks","no barcode"],["CONSCR-100","7.5 X 100MM CONCRETE SCREWS T30 HEAD BAG 25",2.09,"Concrete Screws","3546602391100"],["CONSCR-120","7.5 X 120MM CONCRETE SCREWS T30 HEAD BAG 25",2.51,"Concrete Screws","3546602391124"],["CONSCR-150","7.5 X 150MM CONCRETE SCREWS T30 HEAD BAG 25",3.26,"Concrete Screws","3546602391155"],["CONSCR-40","7.5 X 40MM CONCRETE SCREWS T30 HEAD BAG 50",1.88,"Concrete Screws","3546600239114"],["CONSCR-60","7.5 X 60MM CONCRETE SCREWS T30 HEAD BAG 50",2.69,"Concrete Screws","3546602391162"],["CONSCR-80","7.5 X 80MM CONCRETE SCREWS T30 HEAD BAG 50",3.4,"Concrete Screws","3546600239118"],["CS-40-COB","40MM COUNTERSINK COBALT",30.0,"Countersinks","5791885810246"],["CS-10-RBS","10MM COUNTERSINK ROTA BROACH CUTTER SHANK",7.75,"Countersinks","5791865811232"],["CS-12-RBS","12.4MM COUNTERSINK ROTA BROACH CUTTER SHANK",8.25,"Countersinks","5791865811232"],["CS-16-RBS","16.5MM COUNTERSINK ROTA BROACH CUTTER SHANK",9.25,"Countersinks","5791865811249"],["CS-20-RBS","20MM COUNTERSINK ROTA BROACH CUTTER SHANK",10.75,"Countersinks","9319510013761"],["CS-25-RBS","25MM COUNTERSINK ROTA BROACH CUTTER SHANK",14.05,"Countersinks","5791865811263"],["CS-30-RBS","30MM COUNTERSINK ROTA BROACH CUTTER SHANK",17.0,"Countersinks","5791865811348"],["CS-40-RBS","40MM COUNTERSINK ROTA BROACH CUTTER SHANK",22.32,"Countersinks","9319510013778"],["CS-10-SS","10MM COUNTERSINK",5.0,"Countersinks","5791886809126"],["CS-12-SS","12.4MM COUNTERSINK",5.75,"Countersinks","5791886809225"],["CS-16-SS","16.5MM COUNTERSINK",7.8,"Countersinks","3255667017374"],["CS-20-SS","20MM COUNTERSINK",10.9,"Countersinks","3255667008334"],["CS-25-SS","25MM COUNTERSINK",14.05,"Countersinks","5791886809249"],["CS-31-SS","31MM COUNTERSINK",20.25,"Countersinks","5791865811270"],["CS-40-SS","40MM COUNTERSINK",28.49,"Countersinks","5791885820245"],["DB-3PC-SET","115MM 3 PIECE DIAMOND BLADE SET",18.0,"Diamond Blades","211520223873"],["CSB-250","250MM X 2MM X 32B X 200T COLD SAW BLADE",45.32,"Diamond Blades","8017064004914"],["CSB-300","300MM X 2MM X 32B X 220T COLD SAW BLADE",59.52,"Diamond Blades","out of stock"],["CSB-350","350 X 20MM LASER WELDED CONCRETE CON SAW BLADE",85.0,"Diamond Blades","6734528719635"],["CSB-400-ASP","400 X 20MM ASPHALT CON SAW BLADE",60.0,"Diamond Blades","out of stock"],["CSB-400-CON","400 X 20MM CONCRETE CON SAW BLADE",87.0,"Diamond Blades","6734528719645"],["DB-115-HPT-R","115 X 22.23MM SUPER THIN HOT PRESSED TURBO BLADE RED",11.57,"Diamond Blades","696205072296"],["DB-180-HPT","180 X 22.23MM HOT PRESSED TURBO DIAMOND BLADE",28.0,"Diamond Blades","218016200762"],["DB-200-HPT","200 X 25.4MM HOT PRESSED TURBO DIAMOND BLADE",35.0,"Diamond Blades","220026250762"],["DB-230-HPT","230 X 22.23MM HOT PRESSED TURBO DIAMOND BLADE",40.0,"Diamond Blades","5246693719131"],["DB-250-HPT","250 X 25.4MM HOT PRESSED TURBO DIAMOND BLADE",49.0,"Diamond Blades","225020250762"],["DB-115-MET","115 X 22.23MM DIAMOND METAL CUTTING BLADE",9.0,"Diamond Blades","4814282002197"],["DB-125-MET","125 X 22.23MM DIAMOND METAL CUTTING BLADE",10.0,"Diamond Blades","4814282002197"],["RSB-350-ASP","350 X 25.4 ASPHALT/CONCRETE DIAMOND BLADE",120.0,"Diamond Blades","no barcode"],["RSB-350-CON","350 X 25.4MM CONCRETE/ASPHALT DIAMOND BLADE",120.0,"Diamond Blades","6734528719635"],["RSB-400-ASP","400 X 25.4MM ASPHALT DIAMOND BLADE",200.0,"Diamond Blades","no barcode"],["RSB-400-CON","400 X 25.4MM CONCRETE/ASPHALT DIAMOND BLADE",200.0,"Diamond Blades","6734528719642"],["RSB-450-ASP","450 X 25.4MM ASPHALT/CONCRETE DIAMOND BLADE",220.0,"Diamond Blades","no barcode"],["RSB-450-CON","450 X 25.4MM CONCRETE/ASPHALT DIAMOND BLADE",220.0,"Diamond Blades","no barcode"],["SDB-115","115 X 22.23MM SEGMENTED DIAMOND BLADE",10.16,"Diamond Blades","6962050722650"],["SDB-230-PRE","230 X 22.23MM SEGMENTED DIAMOND BLADE (PREMIUM)",63.5,"Diamond Blades","no barcode"],["SDB-230-BLCK","230 X 22.23MM SEGMENTED DIAMOND BLADE BLACK",25.0,"Diamond Blades","8858833101065"],["SDB-230-BLUE","230 X 22.23MM SEGMENTED DIAMOND BLADE BLUE",12.0,"Diamond Blades","8858833101065"],["SDB-250","250MM SEGMENTED DIAMOND BLADE",45.0,"Diamond Blades","225032251077"],["SDB-300-BLCK","300 X 20MM SEGMENTED DIAMOND BLADE BLACK",45.0,"Diamond Blades","8858833101058"],["SDB-300-BLUE","300 X 20MM SEGMENTED DIAMOND BLADE BLUE",23.0,"Diamond Blades","8858833101058"],["SDB-300-25","300 X 25.4MM SEGMENTED DIAMOND BLADE",45.0,"Diamond Blades","230032221071"],["DTB-115-22","115 X 22.23MM CONTINUOUS RIM TILE BLADE",10.16,"Diamond Blades","no barcode"],["DTB-180-22","180 X 22.23MM CONTINUOUS RIM TILE BLADE",25.0,"Diamond Blades","3838946170764"],["DTB-180-25","180 X 25.4MM CONTINUOUS RIM TILE BLADE",25.0,"Diamond Blades","no barcode"],["DTB-200-25","200 x 25.4MM CONTINUOUS RIM TILE BLADE",31.0,"Diamond Blades","5391200010018"],["DTB-230-22","230MM CONTINUOUS RIM TILE BLADE",35.0,"Diamond Blades","223023220762"],["DTB-250-25","250 X 25.4MM CONTINUOUS RIM TILE BLADE",45.0,"Diamond Blades","225020250765"],["WCB-125","125 X 22.23MM LASER WELDED WALL CHASING BLADE",25.0,"Diamond Blades","211520220877"],["WCB-180-TUR","180 X 22.23MM LASER WELDED TURBO WALL CHASING BLADE",30.0,"Diamond Blades","696205072272"],["WCB-180","180 X 22.23MM LASER WELDED WALL CHASING BLADE",30.0,"Diamond Blades","218020220877"],["HDI-10-1.25","10 X 1.25MM HSS-M2 ADJUSTABLE DIES 1\"",4.85,"Hand Taps","no barcode"],["HDI-10-1.5","10 X 1.5MM HSS-M2 ANSI ADJUSTABLE DIES 1\"",4.86,"Hand Taps","no barcode"],["HDI-12-1.5","12 X 1.5MM HSS-M2 ANSI ADJUSTABLE DIES 1 1/2\"",8.5,"Hand Taps","no barcode"],["HDI-12-1.75","12 X 1.75MM HSS-M2 ANSI ADJUSTABLE DIES 1 1/2\"",8.58,"Hand Taps","no barcode"],["HDI-14-2.0","14 X 2.0MM HSS-M2 ANSI ADJUSTABLE DIES 1 1/2\"",8.59,"Hand Taps","no barcode"],["HDI-16-2.0","16 X 2.0MM HSS-M2 ANSI ADJUSTABLE DIES 1 1/2\"",12.0,"Hand Taps","no barcode"],["HDI-2.5-0.45","2.5 X 0.45MM HSS-M2 ANSI ADJUSTABLE DIES 13/16",1.87,"Hand Taps","7890203600830"],["HDI-20-1.5","20 X 1.5MM HSS M2 ANSI ADJUSTABLE DIE",13.0,"Hand Taps","no barcode"],["HDI-20-2.5","20 X 2.5MM HSS-M2 ADJUSTABLE DIES 2\"",13.0,"Hand Taps","7890203600830"],["HDI-22-2.5","22 X 2.5MM HSS-M2 ANSI ADJUSTABLE DIES 2\"",20.0,"Hand Taps","7890203600830"],["HDI-24-3.0","24 X 3.0MM HSS-M2 ANSI ADJUSTABLE DIES 2\"",25.0,"Hand Taps","7890203600830"],["HDI-2-0.4","2 X 0.4MM HSS-M2 ANSI ADJUSTABLE DIES 13/16",1.86,"Hand Taps","no barcode"],["HDI-3-0.5","3 X 0.5MM HSS-M2 ANSI ADJUSTABLE DIES 13/16",1.88,"Hand Taps","7890203600830"],["HDI-4-0.7","4 X 0.7MM HSS-M2 ANSI ADJUSTABLE DIES 13/16",1.89,"Hand Taps","no barcode"],["HDI-5-0.8","5 X 0.8MM HSS-M2 ANSI ADJUSTABLE DIES 13/16",1.9,"Hand Taps","7890203600830"],["HDI-6-1.0","6 X 1.0MM HSS-M2 ANSI ADJUSTABLE DIES 13/16",1.91,"Hand Taps","7890203600830"],["HDI-8-1.25","8 X1.25MM HSS-M2 ANSI ADJUSTABLE DIES 1\"",2.95,"Hand Taps","no barcode"],["ADB-10-130","10 X 130MM AUGER BIT",3.62,"Drill Bits","6988426730500"],["ADB-10-265","10 X 265MM AUGER BIT",5.31,"Drill Bits","6988426730593"],["ADB-10-400","10 X 400MM AUGER BIT",8.45,"Drill Bits","6988526104003"],["ADB-12-130","12 X 130MM AUGER BIT",4.23,"Drill Bits","6988426730517"],["ADB-12-165","12 X 265MM AUGER BIT",5.38,"Drill Bits","6988426730609"],["ADB-12-400","12 X 400MM AUGER BIT",9.66,"Drill Bits","6988526124001"],["ADB-13-130","13 X 130MM AUGER BIT",4.83,"Drill Bits","6988426131307"],["ADB-13-265","13 X 265MM AUGER BIT",5.44,"Drill Bits","6988426132656"],["ADB-15-130","15 X 130MM AUGER BIT",4.98,"Drill Bits","6988426730548"],["ADB-15-265","15 X 265MM AUGER BIT",5.97,"Drill Bits","6988426730616"],["ADB-16-130","16 X 130MM AUGER BIT",5.23,"Drill Bits","6988426730555"],["ADB-16-265","16 X 265MM AUGER BIT",6.16,"Drill Bits","6988426162653"],["ADB-18-130","18 X 130MM AUGER BIT",5.44,"Drill Bits","6988426730524"],["ADB-18-265","18 X 265MM AUGER BIT",6.28,"Drill Bits","6888426182654"],["ADB-19-130","19 X 130MM AUGER BIT",5.49,"Drill Bits","6988426730562"],["ADB-19-265","19 X 265MM AUGER BIT",6.58,"Drill Bits","6988426730531"],["ADB-20-150","20 X 150MM AUGER BIT",5.55,"Drill Bits","5902628351005"],["ADB-20-300","20 X 300MM AUGER BIT",6.65,"Drill Bits","5902628351012"],["ADB-22-130","22 X 130MM AUGER BIT",5.73,"Drill Bits","6988426730579"],["ADB-22-265","22 X 265MM AUGER BIT",7.0,"Drill Bits","8011779069053"],["ADB-25-150","25 X 150MM AUGER BIT",6.89,"Drill Bits","8902628351088"],["ADB-25-300","25 X 300MM AUGER BIT",7.18,"Drill Bits","6988426730623"],["ADB-26-130","26 X 130MM AUGER BIT",6.94,"Drill Bits","no barcode"],["ADB-26-265","26 X 265MM AUGER BIT",7.97,"Drill Bits","no barcode"],["ADB-32-130","32 X 130MM AUGER BIT",7.85,"Drill Bits","6928426521302"],["ADB-32-265","32 X 265MM AUGER BIT",8.94,"Drill Bits","6988426322651"],["WDB-6PC-FLT","6 PIECE 10-25MM FLAT WOOD DRILL BIT SET",4.0,"Drill Bits","6988426721065"],["DCB-355-90T-AL","355 X 25.4 X 90T ALUMINUM DRY CUT BLADE",60.0,"Dry Cut Blades","no barcode"],["DCB-150-34T-MS","150 X 20 X 1.8 X 1.3 X 34T MILD STEEL DRY CUT BLADE",15.0,"Dry Cut Blades","6988426731002"],["DCB-355-66T-MS","355 X 25.4 X 66T MILD STEEL DRY CUTTER BLADE",65.0,"Dry Cut Blades","1318430171107"],["DCB-355-90T-MS","355 X 25.4 X 90T MILD STEEL DRY CUT BLADE",75.0,"Dry Cut Blades","131843017206"],["DCB-305-80T-SS","305 X 25.4 X 80T STAINLESS STEEL DRY CUTTER BLADE",88.88,"Dry Cut Blades","1318330271306"],["DCB-355-90T-SS-P","355 X 25.4 X 90T PREMIUM STAINLESS STEEL DRY CUT BLADE",110.0,"Dry Cut Blades","1328330172402"],["DCB-355-90T-SS","355 X 25.4 X 90T STAINLESS & MILD STEEL DRY CUTTER BLADE",99.5,"Dry Cut Blades","132833017240"],["ADP-DW","DEWALT ADAPTOR",30.0,"Electrical","no barcode"],["BNM-DW-14.4-2.5-N","DEWALT 14.4V 2.5AH NI-MH BATTERY(NEW)",40.0,"Electrical","no barcode"],["BNM-DW-24-3","BAT/DEW 24V 3.0AH NI-MH BATTERY(NEW)",80.0,"Electrical","no barcode"],["BNM-BOS-12-2.1","BOSCH 12V 2.1AH NI-MH BATTERY",34.0,"Electrical","6930025810909"],["BNM-BOS-14.4-2.5","BOSCH 14.4V 2.5AH NI-MH BATTERY",40.0,"Electrical","no barcode"],["BNM-BOS-18-2.5","BOSCH 18V 2.5AH NI-MH BATTERY",49.0,"Electrical","no barcode"],["BLI-BOS-18-4","BOSCH 18V 4.0AH LI-ION BATTERY",55.0,"Electrical","no barcode"],["BNM-DW-12-2.1","DEWALT 12V 2.1AH NI-MH BATTERY",28.0,"Electrical","no barcode"],["BNM-DW-14.4-2.5","DEWALT 14.4V 2.5AH NI-MH BATTERY",40.0,"Electrical","no barcode"],["BNM-DW-18-2.5","DEWALT 18V 2.5AH NI-MH BATTERY",55.0,"Electrical","no barcode"],["BLI-DW-18-4","DEWALT 18V 4.0AH LI-ION BATTERY",55.0,"Electrical","no barcode"],["BLI-HIL-36-3","HILTI 36V 3.0AH LI-ION BATTERY",125.0,"Electrical","6932060902472"],["BNM-HTC-12-2.1","HITACHI 12V 2.1AH NI-MH BATTERY",30.0,"Electrical","no barcode"],["BNM-HTC-14.4-2.6","HITACHI 14.4V 2.6AH NI-MH BATTERY",40.0,"Electrical","no barcode"],["BNM-HTC-18-2.6","HITACHI 18V 2.6AH NI-MH BATTERY",49.0,"Electrical","no barcode"],["BNM-MKT-14.4-2.5","MAKITA 14.4V 2.5AH NI-MH BATTERY",40.0,"Electrical","no barcode"],["BLI-MKT-14.4-3","MAKITA 14.4V 3.0AH LI-ION BATTERY",55.0,"Electrical","6930025811814"],["BLI-MKT-18-3","MAKITA 18V 3.0AH LI-ION BATTERY",65.0,"Electrical","no barcode"],["BLI-MKT-18-4","MAKITA 18V 4.0AH LI-ION BATTERY",55.0,"Electrical","no barcode"],["BNM-MKT-24-3","MAKITA 24V 3.0AH NI-MH BATTERY",82.0,"Electrical","no barcode"],["BNM-MKT-9.6-1.3","MAKITA 9.6V 1.3 AH NI-MH BATTERY",15.5,"Electrical","no barcode"],["BNM-MWK-18-3","MILWAUKEE 18V 3.0AH NI-MH",60.0,"Electrical","no barcode"],["BLI-MWK-18-4","MILWAUKEE 18V 4.0AH LI-ION BATTERY",90.0,"Electrical","6932060902069"],["BNM-PSLD-6-3.3","PASLODE 6V 3.3AH NI-MH BATTERY",25.0,"Electrical","no barcode"],["BNM-RYB-14-2.5","RYOBI 14V 2.5 AH NI-MH BATTERY",40.0,"Electrical","6930025818677"],["BNM-RYB-24-3","RYOBI 24V 3.0 AH NI-MH BATTERY",78.0,"Electrical","6930025810428"],["CAB-1.5-3C-Y-100M","1.5MM 3 CORE TWIN & EARTH YELLOW ARTIC CABLE 100M",87.55,"Electrical","no barcode"],["CABE-110V-14M","16AMP 110V 14M X 2.5MM 3 CORE YELLOW ARCTIC EXT. CABLE",25.76,"Electrical","50622997754343"],["CABE-110V-20M","16AMP 110V 20M X 2.5MM 3 CORE YELLOW ARCTIC EXT. CABLE",35.02,"Electrical","50622997754367"],["CABE-110V-25M","16AMP 110V 25M X 2.5MM 3 CORE YELLOW ARCTIC EXT. CABLE",42.82,"Electrical","50622997754344"],["CABE-110V-40M","16AMP 110V 40M X 2.5MM 3 CORE YELLOW ARCTIC EXT. CABLE",66.08,"Electrical","5062299775408"],["CAB-2.5-3C-Y-100M","2.5MM 3 CORE TWIN & EARTH YELLOW ARTIC CABLE 100M",143.0,"Electrical","50622997754336"],["CHRG-DW","7.2V TO 18V DEWALT TYPE BATTERY CHARGER",50.0,"Electrical","6930025811166"],["CHRG-HTC","7.2V TO 18V HITACHI TYPE BATTERY CHARGER",50.0,"Electrical","6930025811197"],["CHRG-MKT","7.2V TO 18V MAKITA TYPE BATTERY CHARGER",52.0,"Electrical","6930025811180"],["CHRG-RYB","RYOBI NI-CD NI-MH &LI-ION CHARGER 12V-18V",42.0,"Electrical","6932060902052"],["CHRG-UNV","UNIVERSAL BATTERY CHARGER 4.8V TO 18V",50.0,"Electrical","4712805590223"],["ECS-50PC","50 PIECE ELECTRICAL CONNECTOR SET",2.5,"Electrical","5398000877759"],["FUSE-13A","13AMP FUSE",0.13,"Electrical","no barcode"],["SCT-13A-220V-2G-BR","13AMP 220V BLACK RUBBER 2 GANG SOCKET",3.6,"Electrical","3255667079341"],["SCT-13A-240V-1G-BR","13AMP 240V BLACK RUBBER 1 GANG SOCKET",2.5,"Electrical","5391884781280"],["SCT-TRL-1G","1 GANG TRAILING SOCKET 16A",5.5,"Electrical","3255660001523"],["SCT-TRL-2G","2 GANG TRAILING SOCKET 16A",7.0,"Electrical","3255660001585"],["SCT-13A-220V-ADP","ADP. TRAILING SOCKET 13AMP 220V PLUG & 16 AMP 3 HOLE SKT",5.5,"Electrical","4907990101044"],["GFSB-CRS","63 X 1.6 X 16 44BW GF SAW BLADES COARSE",14.15,"GF Saw Blades","no barcode"],["GFSB-FINE","63 X 1.6 X 16 64BW HSSCO5 GF SAW BLADES FINE",14.15,"GF Saw Blades","no barcode"],["HSB-12-BM-100PC","12\" BI-METAL HACKSAW BLADE 100PCS",73.0,"Hacksaw Blades","no barcode"],["HMR-16-STL-CLW","16OZ ALL STEEL ANTI-SHOCK CLAW HAMMER",7.2,"Hammers","5025416991761"],["HMR-32-FGH-BLPN","32OZ BALL PEIN HAMMER FIBRE GLASS HANDLE",7.5,"Hammers","5052299775423"],["HMR-48-FGH-BLPN","48OZ BALL PEIN HAMMER FIBRE GLASS HANDLE",10.5,"Hammers","5398201479806"],["HMR-16-HCK-BLPN","16OZ BALL PEIN HAMMER HICKORY HANDLE",6.0,"Hammers","5390205369626"],["HMR-24-HCK-BLPN","24OZ BALL PEIN HAMMER HICKORY HANDLE",6.5,"Hammers","5391199984017"],["HMR-38-HCK-BLPN","32OZ BALL PEIN HAMMER HICKORY HANDLE",7.5,"Hammers","5025416991778"],["HMR-48-HCK-BLPN","48OZ BALL PEIN HAMMER HICKORY HANDLE",10.5,"Hammers","539820147997"],["HMR-1KG-FGH-LMP","1000G LUMP HAMMER FIBRE GLASS HANDLE",6.0,"Hammers","5391181170121"],["HMR-1.5KG-FGH-LMP","1500G LUMP HAMMER FIBRE GLASS HANDLE",7.0,"Hammers","5025416991754"],["HMR-16-TUB-CLW","16OZ TUBULAR CLAW HAMMER",4.12,"Hammers","5390205369633"],["HTP1-10-1.50","10 X 1.50MM - 1 PIECE HAND TAP HSS-M-2 DIN352",2.05,"Hand Taps","7890203600830"],["HTP1-12-1.75","12 X 1.75MM - 1 PIECE HAND TAP HSS-M2 DIN352",3.5,"Hand Taps","7890203600830"],["HTP1-14-2.0","14 X 2.0MM - 1 PIECE HAND TAP HSS-M2 DIN352",4.25,"Hand Taps","7890203600830"],["HTP1-16.2.0","16 X 2.0MM - 1 PIECE HAND TAP HSS-M2 DIN352",4.9,"Hand Taps","7890203600830"],["HTP1-2.5-0.45","2.5 X 0.45MM - 1 PIECE HAND TAP HSS-M2 DIN352",1.4,"Hand Taps","7890203600830"],["HTP1-20-2.5","20 X 2.5MM - 1 PIECE HAND TAP HSS-M2 DIN352",9.0,"Hand Taps","7890203600830"],["HTP1-22-2.5","22 X 2.5MM - 1 PIECE HAND TAP HSS-M2 DIN352",10.0,"Hand Taps","7890203600830"],["HTP1-24-2.5","24 X 2.5MM - 1 PIECE HAND TAP HSS-M2 DIN352",13.0,"Hand Taps","out of stock"],["HTP1-2-0.4","2 X 0.4MM - 1 PIECE HAND TAP HSS-M2 DIN352",1.3,"Hand Taps","7890203600830"],["HTP1-3.5-0.5","3.5 X 0.5MM - 1 PIECE HAND TAP HSS-M2 DIN352",1.18,"Hand Taps","7890203600830"],["HTP1-3-0.5","3 X 0.5MM - 1 PIECE HAND TAP HSS-M2 DIN352",1.45,"Hand Taps","7890203600830"],["HTP1-4-0.7","4 X 0.7MM - 1 PIECE HAND TAP HSS-M2 DIN352",1.5,"Hand Taps","7890203600830"],["HTP1-5-0.8","5 X 0.8MM - 1 PIECE HAND TAP HSS-M2 DIN352",1.6,"Hand Taps","7890203600830"],["HTP1-6-1.0","6 X 1.0MM - 1 PIECE HAND TAP HSS-M2 DIN352",1.65,"Hand Taps","7890203600830"],["HTP1-8-1.25","8 X 1.25MM - 1 PIECE HAND TAP HSS-M2 DIN352",1.7,"Hand Taps","7890203600830"],["HTP3-10-1.5","10 X 1.5MM - 3 PIECE HAND TAP SET DIN352",7.42,"Hand Taps","4014176002542"],["HTP3-12.1.5","12 X 1.5MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",9.0,"Hand Taps","7890203600830"],["HTP3-12-1.75","12 X 1.75MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",9.91,"Hand Taps","4014176002566"],["HTP3-14-2.0","14 X 2.0MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",12.07,"Hand Taps","7890203600830"],["HTP3-16-2.0","16 X 2.0MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",14.66,"Hand Taps","4014176002580"],["HTP3-18-2.5","18 X 2.5MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",24.0,"Hand Taps","4014176002597"],["HTP3-2.5-0.45","2.5 X 0.45MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",3.8,"Hand Taps","7890203600830"],["HTP3-20-2.5","20 X 2.5MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",21.55,"Hand Taps","no barcode"],["HTP3-22-2.5","22 X 2.5MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",30.5,"Hand Taps","7890203600830"],["HTP3-24-3.0","24 X 3.0MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",35.0,"Hand Taps","7890203600830"],["HTP3-2-0.4","2 X 0.4 3MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",3.7,"Hand Taps","7890203600830"],["HTP3-3-0.5","3 X 0.5 3MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",3.85,"Hand Taps","7890203600830"],["HTP3-4-0.7","4 X 0.7MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",4.0,"Hand Taps","4014176002474"],["HTP3-5-0.8","5 X 0.8MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",4.25,"Hand Taps","7890203600830"],["HTP3-6-1.0","6 X 1.0MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",5.0,"Hand Taps","3088158224536"],["HTP3-8-1.25","8 X 1.25MM - 3 PIECE HAND TAP SET HSS-M2 DIN352",5.23,"Hand Taps","4014176002528"],["HTP1-BSP-1/2","1/2\" 1 PIECE BSPT HAND TAP HSS-M2",11.78,"Hand Taps","4014448675047"],["HTP1-BSP-1/4","1/4\" 1 PIECE BSPT HAND TAP HSS-M2",5.83,"Hand Taps","7890203600830"],["HTP1-BSP-1/8","1/8\" 1 PIECE BSPT HAND TAP HSS-M2",4.53,"Hand Taps","no barcode"],["HTP1-BSP-3/4","3/4\" 1 PIECE BSPT HAND TAP HSS-M2 STRAIGHT FLUTE",16.88,"Hand Taps","7890203600830"],["HTP1-BSP-3/8","3/8\" 1 PIECE BSPT HAND TAP HSS-M2",7.78,"Hand Taps","7890203600830"],["MTP1-10-1.5","10 X 1.50MM - 1 PIECE COMBINATION MACHINE TAP AND DRILL BIT",5.5,"Hand Taps","4014176106851"],["MTP1-3-0.5","3 X 0.5MM - 1 PIECE COMBINATION MACHINE TAP AND DRILL BIT",4.0,"Hand Taps","4014176106806"],["MTP1-4-0.7","4 X 0.7 - 1 PIECE COMBINATION MACHINE TAP AND DRILL BIT",4.2,"Hand Taps","4014176106813"],["MTP1-5-0.8","5 X 0.8MM - 1 PIECECOMBINATION MACHINE TAP AND DRILL BIT",4.5,"Hand Taps","4014176106820"],["MTP1-6-1.0","6 X 1.0MM - 1 PIECE COMBINATION MACHINE TAP AND DRILL BIT",4.6,"Hand Taps","4014176106837"],["MTP1-8-1.25","8 X 1.25MM - 1PIECE COMBINATION MACHINE TAP AND DRILL BIT",5.0,"Hand Taps","4014176106844"],["CLKNT-AG","ANGLE GRINDER CLICK NUT",9.0,"Hand Tools","8436026383872"],["CLKNT-MG","MINI GRINDER CLICK NUT (UP TO 1200W)",5.5,"Hand Tools","8436026383865"],["KNF-TRBF","TURBOFOLD UTILITY KNIFE",4.6,"Hand Tools","6957330010428"],["KNF-BLD-10","UTILITY KNIFE BLADES (10 PACK)",0.75,"Hand Tools","883652330066"],["MSRTP-3M","3M MEASURING TAPE",1.0,"Hand Tools","6930194231635"],["MSRTP-5M","5M MEASURING TAPE",2.5,"Hand Tools","6930194251640"],["PDL-DRL-100","100 X 400MM DRILL PADDLE WITH 10MM SHAFT",13.0,"Hand Tools","no barcode"],["PDL-120","120 X 600MM PADDLE",13.0,"Hand Tools","no barcode"],["PDL-140","140 X 600MM PADDLE",14.0,"Hand Tools","no barcode"],["PDL-160","160 X 600MM PADDLE",15.0,"Hand Tools","no barcode"],["PDL-ADHS","ADHESIVE MIXER PADDLE WITH FINGERS X 600MM",12.0,"Hand Tools","no barcode"],["RCHT-1/2","1/2\" DRIVE 72T REVERSIBLE RATCHET",8.4,"Hand Tools","no barcode"],["RCHT-3/8","3/8\" DRIVE 72T REVERSIBLE RATCHET",7.0,"Hand Tools","no barcode"],["RCHT-11PC","11 PIECE FLEXIBLE RATCHET SET (8-19MM)",34.0,"Hand Tools","5392256082813"],["RCHT-7PC","7 PIECE FLEXIBLE RATCHET SET (8-19MM)",22.0,"Hand Tools","8004260477253"],["SCKT-25PC-1/2","1.2\" DRIVE 25 PIECE SOCKET SET 10-32 INC. PLUG SPANNERS",44.22,"Hand Tools","5012594433541"],["SCKT-29PC-3/8","3/8\" 29 PIECE SOCKET SET 8-22 & 10-19 + PLUG SPANNERS 16&21MM",36.65,"Hand Tools","5012594433565"],["WRNC-10PC","10 PIECE COMBINATION WRENCH SET (8-24MM)",13.0,"Hand Tools","no barcode"],["WRNC-26PC","26 PIECE COMBINATION WRENCH SET (6-32MM)",49.0,"Hand Tools","no barcode"],["SPNR-MG-BLCK","BLACK MINI GRINDER SPANNER",3.0,"Hand Tools","no barcode"],["SPNR-AG-FLT","FLAT GRINDER SPANNER 17-14MM",2.0,"Hand Tools","no barcode"],["SPNR-MG-RED","RED MINI GRINDER SPANNER",3.0,"Hand Tools","no barcode"],["FLNG-AG-UNV","UNIVERSAL ANGLE GRINDER FLANGE SET",3.5,"Hand Tools","no barcode"],["SPNR-AG-UNV","UNIVERSAL ANGLE GRINDER SPANNER",3.5,"Hand Tools","no barcode"],["HLSW-ARB-A1","14-30MM A1 HOLE SAW ARBOR",2.1,"Holesaws","6988626799086"],["HLSW-ARB-A2","32-152MM A2 HOLE SAW ARBOR",4.16,"Holesaws","6988626799086"],["HLSW-BM-102","102MM (4) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",11.8,"Holesaws","7890203600830"],["HLSW-BM-105","105MM (4 1/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",12.15,"Holesaws","7890203600830"],["HLSW-BM-108","108MM (4 1/4) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",12.49,"Holesaws","7890203600830"],["HLSW-BM-111","111MM (4 3/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",12.84,"Holesaws","7890203600830"],["HLSW-BM-114","114MM (4 1/2) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",13.2,"Holesaws","no barcode"],["HLSW-BM-127","127MM (5) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",14.68,"Holesaws","7890203600830"],["HLSW-BM-133","133MM (5 1/4) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",15.36,"Holesaws","7890203600830"],["HLSW-BM-140","140MM (5 1/2) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",16.16,"Holesaws","7890203600830"],["HLSW-BM-14","14MM (9/16) HSS M42 BI-METAL HOLE SAW 8% JAPANESE COBALT",2.5,"Holesaws","7890203600830"],["HLSW-BM-152","152MM (6) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",17.55,"Holesaws","7890203600830"],["HLSW-BM-16","16MM (5/8) HSS M42 BI-METAL HOLE SAW 8% JAPANESE COBALT",3.25,"Holesaws","7890203600830"],["HLSW-BM-17","17MM (11/16) HSS M42 BI-METAL HOLE SAW 8% JAPANESE COBALT",3.32,"Holesaws","7890203600830"],["HLSW-BM-19","19MM (3/4) HSS M42 BI-METAL HOLE SAW 8% JAPANESE COBALT",3.44,"Holesaws","7890203600830"],["HLSW-BM-20","20MM (25/32) HSS M42 BI-METAL HOLE SAW 8% JAPANESE COBALT",3.5,"Holesaws","7890203600830"],["HLSW-BM-21","21MM (13/16) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",3.88,"Holesaws","7890203600830"],["HLSW-BM-22","22MM (7/8) HSS M42 BI-METAL HOLE SAW 8% JAPANESE COBALT",3.95,"Holesaws","no barcode"],["HLSW-BM-25","25MM (1) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",4.06,"Holesaws","7890203600830"],["HLSW-BM-29","29MM (1 1/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",4.13,"Holesaws","7890203600830"],["HLSW-BM-30","30MM (1 3/16) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",4.25,"Holesaws","7890203600830"],["HLSW-BM-32","32MM (1 1/4) HSS M42 BIMETAL HOLE SAW 8% JAPENESE COBALT",4.31,"Holesaws","no barcode"],["HLSW-BM-33","33MM (1 5/16) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",4.44,"Holesaws","7890203600830"],["HLSW-BM-35","35MM HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",4.5,"Holesaws","7890203600830"],["HLSW-BM-38","38MM (1 1/2) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",4.81,"Holesaws","7890203600830"],["HLSW-BM-40","40MM (1 9/16) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",4.94,"Holesaws","7890203600830"],["HLSW-BM-41","41MM (1 5/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",5.13,"Holesaws","7890203600830"],["HLSW-BM-44","44MM (1 3/4) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",5.16,"Holesaws","no barcode"],["HLSW-BM-48","48MM (1 7/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",5.62,"Holesaws","no barcode"],["HLSW-BM-51","51MM HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",6.1,"Holesaws","7890203600830"],["HLSW-BM-54","54MM (2 1/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",6.88,"Holesaws","7890203600830"],["HLSW-BM-55","55MM HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",7.0,"Holesaws","7890203600830"],["HLSW-BM-57","57MM (2 1/4) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",7.13,"Holesaws","out of stock"],["HLSW-BM-60","60MM (2 3/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",7.44,"Holesaws","7890203600830"],["HLSW-BM-61","61MM HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",7.5,"Holesaws","7890203600830"],["HLSW-BM-64","64MM HSS M42 BIMETAL HOLESAW",7.85,"Holesaws","7890203600830"],["HLSW-BM-65","65MM (2 9/16) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",8.0,"Holesaws","7890203600830"],["HLSW-BM-68","68MM (2 11/16) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",8.13,"Holesaws","7890203600830"],["HLSW-BM-70","70MM (2 3/4) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",8.16,"Holesaws","no barcode"],["HLSW-BM-73","73MM (2 7/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",8.75,"Holesaws","7890203600830"],["HLSW-BM-76","76MM (3) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",8.83,"Holesaws","7890203600830"],["HLSW-BM-79","79MM (3 1/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",9.25,"Holesaws","7890203600830"],["HLSW-BM-80","80MM (3) HSS BIMETAL HOLESAW 8% JAPANESE COBALT",9.38,"Holesaws","7890203600830"],["HLSW-BM-83","83MM (3 1/4) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",9.7,"Holesaws","7890203600830"],["HLSW-BM-89","89MM (3 1/2) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",10.33,"Holesaws","7890203600830"],["HLSW-BM-92","92MM (3 5/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",10.68,"Holesaws","7890203600830"],["HLSW-BM-95","95MM (3 3/4) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",11.01,"Holesaws","7890203600830"],["HLSW-BM-98","98MM (3 7/8) HSS M42 BIMETAL HOLE SAW 8% JAPANESE COBALT",11.35,"Holesaws","7890203600830"],["HLSW-EXT-300","300MM HOLE SAW EXTENSIONS",5.0,"Holesaws","no barcode"],["HLSW-9PC-16-51","9 PIECE 16MM-51MM HOLE SAW SET",30.0,"Holesaws","out of stock"],["HLSW-9PC-19-64","9 PIECE 19MM-64MM HOLE SAW SET",35.0,"Holesaws","out of stock"],["HLSW-TCT-20","20MM TCT TIPPED HOLESAW INC. ARBOR",4.5,"TCT Holesaw","5396856954655"],["HLSW-TCT-25","25MM TCT TIPPED HOLESAW INC. ARBOR",4.7,"TCT Holesaw","6930025811173"],["HLSW-TCT-32","32MM TCT TIPPED HOLESAW INC. ARBOR",5.0,"TCT Holesaw","3850900139433"],["HSS-CB8-1.5","1.5MM HSS 8% COBALT SUPER DRILL BIT",0.5,"HSS Drill Bits","6988888980154"],["HSS-CB8-10.5","10.5MM HSS 8% COBALT SUPER DRILL BIT",5.75,"HSS Drill Bits","6988888981052"],["HSS-CB8-10","10MM HSS 8% COBALT SUPER DRILL BIT",5.5,"HSS Drill Bits","6988888981007"],["HSS-CB8-11.5","11.5MM HSS 8% COBALT SUPER DRILL BIT",6.75,"HSS Drill Bits","6988888981151"],["HSS-CB8-11","11MM HSS 8% COBALT SUPER DRILL BIT",6.1,"HSS Drill Bits","6988888981106"],["HSS-CB8-12.5","12.5MM HSS 8% COBALT SUPER DRILL BIT",7.9,"HSS Drill Bits","6988888981250"],["HSS-CB8-12","12MM HSS 8% COBALT SUPER DRILL BIT",7.75,"HSS Drill Bits","6988888981205"],["HSS-CB8-13","13MM HSS 8% COBALT SUPER DRILL BIT",8.5,"HSS Drill Bits","6988888981304"],["HSS-CB8-1","1MM HSS 8% COBALT SUPER DRILL BIT",0.45,"HSS Drill Bits","6988888980109"],["HSS-CB8-2.5","2.5MM HSS 8% COBALT SUPER DRILL BIT",0.6,"HSS Drill Bits","6988888980253"],["HSS-CB8-2","2MM HSS 8% COBALT SUPER DRILL BIT",0.55,"HSS Drill Bits","6988888980208"],["HSS-CB8-3.5","3.5MM HSS 8% COBALT SUPER DRILL BIT",0.83,"HSS Drill Bits","6988888980352"],["HSS-CB8-3","3MM HSS 8% COBALT SUPER DRILL BIT",0.75,"HSS Drill Bits","6988888980307"],["HSS-CB8-4.5","4.5MM HSS 8% COBALT SUPER DRILL BIT",1.05,"HSS Drill Bits","6988888980451"],["HSS-CB8-4","4MM HSS 8% COBALT SUPER DRILL BIT",0.9,"HSS Drill Bits","6988888980406"],["HSS-CB8-5.5","5.5MM HSS 8% COBALT SUPER DRILL BIT",1.3,"HSS Drill Bits","6988888980550"],["HSS-CB8-5","5MM HSS 8% COBALT SUPER DRILL BIT",1.2,"HSS Drill Bits","6988888980505"],["HSS-CB8-6.5","6.5MM HSS 8% COBALT SUPER DRILL BIT",1.8,"HSS Drill Bits","6988888980659"],["HSS-CB8-6","6MM HSS 8% COBALT SUPER DRILL BIT",1.5,"HSS Drill Bits","6988888980604"],["HSS-CB8-7.5","7.5MM HSS 8% COBALT SUPER DRILL BIT",2.5,"HSS Drill Bits","6988888980758"],["HSS-CB8-7","7MM HSS 8% COBALT SUPER DRILL BIT",2.0,"HSS Drill Bits","6988888980703"],["HSS-CB8-8.5","8.5MM HSS 8% COBALT SUPER DRILL BIT",3.3,"HSS Drill Bits","6988888980802"],["HSS-CB8-8","8MM HSS 8% COBALT SUPER DRILL BIT",2.9,"HSS Drill Bits","6988888980857"],["HSS-CB8-9.5","9.5MM HSS 8% COBALT SUPER DRILL BIT",4.25,"HSS Drill Bits","6988888980956"],["HSS-CB8-9","9MM HSS 8% COBALT SUPER DRILL BIT",3.75,"HSS Drill Bits","6988888980901"],["HSS-CBB-1.5","1.5MM HSS COBALT DRILL BIT BULK",0.18,"HSS Drill Bits","6988626880159"],["HSS-CBB-10.5","10.5MM HSS COBALT DRILL BIT BULK",4.35,"HSS Drill Bits","6988626881057"],["HSS-CBB-10","10MM HSS COBALT DRILL BIT BULK",3.91,"HSS Drill Bits","6988626881002"],["HSS-CBB-11.5","11.5MM HSS COBALT DRILL BIT BULK",5.32,"HSS Drill Bits","6988626881156"],["HSS-CBB-11","11MM HSS COBALT DRILL BIT BULK",4.93,"HSS Drill Bits","6988626881101"],["HSS-CBB-12.5","12.5MM HSS COBALT DRILL BIT BULK",6.62,"HSS Drill Bits","6988626881255"],["HSS-CBB-12","12MM HSS COBALT DRILL BIT BULK",6.14,"HSS Drill Bits","6988626881200"],["HSS-CBB-13.5","13.5MM HSS COBALT DRILL BIT BULK",7.15,"HSS Drill Bits","out of stock"],["HSS-CBB-13","13MM HSS COBALT DRILL BIT BULK",7.12,"HSS Drill Bits","6988888881307"],["HSS-CBB-1","1MM HSS COBALT DRILL BIT BULK",0.16,"HSS Drill Bits","6988626881507"],["HSS-CBB-2.5","2.5MM HSS COBALT DRILL BIT BULK",0.34,"HSS Drill Bits","6988626880258"],["HSS-CBB-2","2MM HSS COBALT DRILL BIT BULK",0.24,"HSS Drill Bits","6988626880203"],["HSS-CBB-3.5","3.5MM HSS COBALT DRILL BIT BULK",0.56,"HSS Drill Bits","6988626880357"],["HSS-CBB-3.9","3.9MM HSS COBALT DRILL BIT BULK",0.58,"HSS Drill Bits","6988626880395"],["HSS-CBB-3","3MM HSS COBALT DRILL BIT BULK",0.42,"HSS Drill Bits","6988626880302"],["HSS-CBB-4.2","4.2MM HSS COBALT DRILL BIT BULK",0.63,"HSS Drill Bits","6988888880423"],["HSS-CBB-4.5","4.5MM HSS COBALT DRILL BIT BULK",0.75,"HSS Drill Bits","6988626880456"],["HSS-CBB-4","4MM HSS COBALT DRILL BIT BULK",0.58,"HSS Drill Bits","6988626880401"],["HSS-CBB-5.5","5.5MM HSS COBALT DRILL BIT BULK",1.05,"HSS Drill Bits","6988626880555"],["HSS-CBB-5","5MM HSS COBALT DRILL BIT BULK",0.9,"HSS Drill Bits","6988626880500"],["HSS-CBB-6.5","6.5MM HSS COBALT DRILL BIT BULK",1.38,"HSS Drill Bits","6988626880654"],["HSS-CBB-6","6MM HSS COBALT DRILL BIT BULK",1.16,"HSS Drill Bits","6888888880600"],["HSS-CBB-7.5","7.5MM HSS COBALT DRILL BIT BULK",1.86,"HSS Drill Bits","6988626880753"],["HSS-CBB-7","7MM HSS COBALT DRILL BIT BULK",1.7,"HSS Drill Bits","6988626880708"],["HSS-CBB-8.5","8.5MM HSS COBALT DRILL BIT BULK",2.57,"HSS Drill Bits","6988626880852"],["HSS-CBB-8","8MM HSS COBALT DRILL BIT BULK",2.33,"HSS Drill Bits","6988626880807"],["HSS-CBB-9.5","9.5MM HSS COBALT DRILL BIT BULK",3.38,"HSS Drill Bits","6988626880951"],["HSS-CBB-9","9MM HSS COBALT DRILL BIT BULK",3.03,"HSS Drill Bits","6988626880906"],["HSS-CBC-1.5","1.5MM HSS COBALT DRILL BIT",0.2,"HSS Drill Bits","6988888880157"],["HSS-CBC-10.5","10.5MM HSS COBALT DRILL BIT",4.35,"HSS Drill Bits","6988888881055"],["HSS-CBC-10","10MM HSS COBALT DRILL BIT",3.92,"HSS Drill Bits","6988888881000"],["HSS-CBC-11.5","11.5MM HSS COBALT DRILL BIT",5.32,"HSS Drill Bits","6988888881154"],["HSS-CBC-11","11MM HSS COBALT DRILL BIT",4.93,"HSS Drill Bits","6988888881109"],["HSS-CBC-12.5","12.5MM HSS COBALT DRILL BIT",6.72,"HSS Drill Bits","6988888881253"],["HSS-CBC-12","12MM HSS COBALT DRILL BIT",6.14,"HSS Drill Bits","6988888881208"],["HSS-CBC-13.5-RS","13.5MM HSS COBALT REDUCED SHANK DRILL BIT",8.76,"HSS Drill Bits","6988526781358"],["HSS-CBC-13","13MM HSS COBALT DRILL BIT",7.27,"HSS Drill Bits","6988888881307"],["HSS-CBC-2.5","2.5MM HSS COBALT DRILL BIT",0.3,"HSS Drill Bits","6988888880256"],["HSS-CBC-2","2MM HSS COBALT DRILL BIT",0.25,"HSS Drill Bits","6988888880201"],["HSS-CBC-3.3","3.3MM HSS COBALT DRILL BIT",0.55,"HSS Drill Bits","6988526783307"],["HSS-CBC-3.5","3.5MM HSS COBALT DRILL BIT",0.58,"HSS Drill Bits","6988888880355"],["HSS-CBC-3","3MM HSS COBALT DRILL BIT",0.48,"HSS Drill Bits","6988888880300"],["HSS-CBC-4.2","4.2MM HSS COBALT DRILL BIT",0.67,"HSS Drill Bits","903504201105"],["HSS-CBC-4.5","4.5MM HSS COBALT DRILL BIT",0.75,"HSS Drill Bits","6988526784502"],["HSS-CBC-4","4MM HSS COBALT DRILL BIT",0.63,"HSS Drill Bits","6988888880409"],["HSS-CBC-5.2","5.2MM HSS COBALT DRILL BIT",1.04,"HSS Drill Bits","6988526785202"],["HSS-CBC-5.5","5.5MM HSS COBALT DRILL BIT",1.08,"HSS Drill Bits","6988888880553"],["HSS-CBC-5","5MM HSS COBALT DRILL BIT",0.9,"HSS Drill Bits","6988888880508"],["HSS-CBC-6.5","6.5MM HSS COBALT DRILL BIT",1.43,"HSS Drill Bits","6988888880652"],["HSS-CBC-6.8","6.8MM HSS COBALT DRILL BIT",1.82,"HSS Drill Bits","903506801105"],["HSS-CBC-6","6MM HSS COBALT DRILL BIT",1.16,"HSS Drill Bits","6988888880607"],["HSS-CBC-7.5","7.5MM HSS COBALT DRILL BIT",1.86,"HSS Drill Bits","6988526787503"],["HSS-CBC-7","7MM HSS COBALT DRILL BIT",1.83,"HSS Drill Bits","6988888880706"],["HSS-CBC-8.5","8.5MM HSS COBALT DRILL BIT",2.57,"HSS Drill Bits","6988888880850"],["HSS-CBC-8","8MM HSS COBALT DRILL BIT",2.33,"HSS Drill Bits","6988888880805"],["HSS-CBC-9.5","9.5MM HSS COBALT DRILL BIT",3.38,"HSS Drill Bits","no barcode"],["HSS-CBC-9","9MM HSS COBALT DRILL BIT",3.1,"HSS Drill Bits","6988526789002"],["HSS-FGEL-10-265","10 X 265MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",6.0,"HSS Drill Bits","6988888881000"],["HSS-FGEL-11-280","11 X 280MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",6.5,"HSS Drill Bits","6988888881109"],["HSS-FGEL-12-295","12 X 295MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",8.0,"HSS Drill Bits","6988888881208"],["HSS-FGEL-3-150","3 X 150MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",1.0,"HSS Drill Bits","6988888880300"],["HSS-FGEL-4.5-295","4.5 X 295MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",2.0,"HSS Drill Bits","6988882950450"],["HSS-FGEL-4-175","4 X 175MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",1.53,"HSS Drill Bits","6988888880409"],["HSS-FGEL-5.5-330","5.5 X 330MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",2.5,"HSS Drill Bits","6988883300551"],["HSS-FGEL-5-195","5 X 195HSS FULLY GROUND EXTRA LONG SERIES DRILL BIT",2.0,"HSS Drill Bits","6988888880508"],["HSS-FGEL-6.5-350","6.5 X 350MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",3.2,"HSS Drill Bits","6988883500654"],["HSS-FGEL-6-205","6 X 205MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",2.1,"HSS Drill Bits","6988888880607"],["HSS-FGEL-7-225","7 X 225MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",3.0,"HSS Drill Bits","6988888880706"],["HSS-FGEL-8-240","8 X 240MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",3.6,"HSS Drill Bits","6988888880805"],["HSS-FGEL-9-250","9 X 250MM FULLY GROUND EXTRA LONG SERIES DRILL BIT",5.0,"HSS Drill Bits","6988888880904"],["HSS-FGR-1.5","1.5MM HSS FULLY GROUND DRILL BIT",0.13,"HSS Drill Bits","6988626881507"],["HSS-FGR-10.2","10.2MM HSS FULLY GROUND DRILL BIT",2.2,"HSS Drill Bits","6988888881024"],["HSS-FGR-10.5","10.5MM HSS FULLY GROUND DRILL BIT",2.3,"HSS Drill Bits","6988626781050"],["HSS-FGR-10","10MM HSS FULLY GROUND DRILL BIT",2.0,"HSS Drill Bits","6988888881000"],["HSS-FGR-11.5","11.5MM HSS FULLY GROUND DRILL BIT",2.45,"HSS Drill Bits","6988626781159"],["HSS-FGR-11.8","11.8MM HSS FULLY GROUND DRILL BIT",2.75,"HSS Drill Bits","6988626781180"],["HSS-FGR-11","11MM HSS FULLY GROUND DRILL BIT",2.4,"HSS Drill Bits","6988626881101"],["HSS-FGR-12.2","12.2MM HSS FULLY GROUND DRILL BIT",2.99,"HSS Drill Bits","6988626781227"],["HSS-FGR-12.5","12.5MM HSS FULLY GROUND DRILL BIT",3.0,"HSS Drill Bits","6988626881255"],["HSS-FGR-12.7","12.7MM HSS FULLY GROUND DRILL BIT",3.75,"HSS Drill Bits","6988626781272"],["HSS-FGR-12","12MM HSS FULLY GROUND DRILL BIT",2.95,"HSS Drill Bits","6988626781203"],["HSS-FGR-13","13MM HSS FULLY GROUND DRILL BIT",3.5,"HSS Drill Bits","6988626781302"],["HSS-FGR-14","14MM HSS FULLY GROUND DILL BUT",5.0,"HSS Drill Bits","6988626781401"],["HSS-FGR-14-RS","14MM HSS FULLY GROUND REDUCED SHANK DRILL BIT",5.0,"HSS Drill Bits","6988626781401"],["HSS-FGR-16-RS","16MM HSS FULLY GROUND REDUCED SHANK  DRILL BIT",5.5,"HSS Drill Bits","6988626781609"],["HSS-FGR-19-RS","19MM HSS FULLY GROUND REDUCED SHANK DRILL BIT",6.5,"HSS Drill Bits","6988626781906"],["HSS-FGR-1","1MM HSS FULLY GROUND DRILL BIT",0.13,"HSS Drill Bits","6988626880104"],["HSS-FGR-2.5","2.5MM HSS FULLY GROUND DRILL BIT",0.16,"HSS Drill Bits","6988888880256"],["HSS-FGR-2","2MM HSS FULLY GROUND DRILL BIT",0.13,"HSS Drill Bits","6988888880201"],["HSS-FGR-3.2","3.2MM HSS FULLY GROUND DRILL BIT",0.27,"HSS Drill Bits","6988626880326"],["HSS-FGR-3.3","3.3MM HSS FULLY GROUND DRILL BIT",0.27,"HSS Drill Bits","6988888880331"],["HSS-FGR-3.5","3.5MM HSS FULLY GROUND DRILL BIT",0.28,"HSS Drill Bits","6988888880355"],["HSS-FGR-3","3MM HSS FULLY GROUND DRILL BIT",0.26,"HSS Drill Bits","6988888880300"],["HSS-FGR-4.2","4.2MM HSS FULLY GROUND DRILL BIT",0.37,"HSS Drill Bits","6988888880423"],["HSS-FGR-4.4","4.4MM HSS FULLY GROUND DRILL BIT",0.41,"HSS Drill Bits","6988626780442"],["HSS-FGR-4.5","4.5MM HSS FULLY GROUND DRILL BIT",0.42,"HSS Drill Bits","6988888880454"],["HSS-FGR-4.8","4.8MM HSS FULLY GROUND DRILL BIT",0.46,"HSS Drill Bits","6988626780480"],["HSS-FGR-4","4MM HSS FULLY GROUND DRILL BIT",0.35,"HSS Drill Bits","6988888880409"],["HSS-FGR-5.1","5.1MM HSS FULLY GROUND DRILL BIT",0.53,"HSS Drill Bits","6988626780510"],["HSS-FGR-5.2","5.2MM HSS FULLY GROUND DRILL BIT",0.54,"HSS Drill Bits","6988626780527"],["HSS-FGR-5.3","5.3MM HSS FULLY GROUND DRILL BIT",0.58,"HSS Drill Bits","6988626780534"],["HSS-FGR-5.5","5.5MM HSS FULLY GROUND DRILL BIT",0.6,"HSS Drill Bits","6988888880553"],["HSS-FGR-5","5MM HSS FULLY GROUND DRILL BIT",0.48,"HSS Drill Bits","6988626780503"],["HSS-FGR-6.2","6.2MM HSS FULLY GROUND DRILL BIT",0.81,"HSS Drill Bits","6988626780626"],["HSS-FGR-6.3","6.3MM HSS FULLY GROUND DRILL BIT",0.84,"HSS Drill Bits","6988626780633"],["HSS-FGR-6.5","6.5MM HSS FULLY GROUND DRILL BIT",0.85,"HSS Drill Bits","6988888880652"],["HSS-FGR-6.8","6.8MM HSS FULLY GROUND DRILL BIT",0.9,"HSS Drill Bits","6988888880683"],["HSS-FGR-6","6MM HSS FULLY GROUND DRILL BIT",0.8,"HSS Drill Bits","6988626780602"],["HSS-FGR-7.1","7.1MM HSS FULLY GROUND DRILL BIT",0.98,"HSS Drill Bits","6988626780718"],["HSS-FGR-7.2","7.2MM HSS FULLY GROUND DRILL BIT",1.04,"HSS Drill Bits","6988626780725"],["HSS-FGR-7.5","7.5MM HSS FULLY GROUND DRILL BIT",1.05,"HSS Drill Bits","6988626780756"],["HSS-FGR-7","7MM HSS FULLY GROUND DRILL BIT",0.95,"HSS Drill Bits","6988626780701"],["HSS-FGR-8.2","8.2MM HSS FULLY GROUND DRILL BIT",1.6,"HSS Drill Bits","6988626780824"],["HSS-FGR-8.5","8.5MM HSS FULLY GROUND DRILL BIT",1.7,"HSS Drill Bits","6988888880850"],["HSS-FGR-8","8MM HSS FULLY GROUND DRILL BIT",1.55,"HSS Drill Bits","6988888880805"],["HSS-FGR-9.5","9.5MM HSS FULLY GROUND DRILL BIT",1.9,"HSS Drill Bits","6988626880951"],["HSS-FGR-9","9MM HSS FULLY GROUND DRILL BIT",1.8,"HSS Drill Bits","6988626880906"],["HSS-FGL-10.5-184","10.5 X 184MM HSS FULLY GROUND LONG SERIES DRILL BIT",2.69,"HSS Drill Bits","6988888881055"],["HSS-FGL-10-184","10 X 184MM HSS FULLY GROUND LONG SERIES DRILL BIT",2.5,"HSS Drill Bits","6988888881000"],["HSS-FGL-11.5-195","11.5 X 195MM HSS FULLY GROUND LONG SERIES DRILL BIT",3.25,"HSS Drill Bits","6988888881154"],["HSS-FGL-11-195","11 X 195MM HSS FULLY GROUND LONG SERIES DRILL BIT",3.02,"HSS Drill Bits","6988888881109"],["HSS-FGL-12-205","12 X 205MM HSS FULLY GROUND LONG SERIES DRILL BIT",3.7,"HSS Drill Bits","6988888881208"],["HSS-FGL-13-205","13 X 205MM HSS FULLY GROUND LONG SERIES DRILL BIT",4.0,"HSS Drill Bits","6988888881307"],["HSS-FGL-3.5-112","3.5 X 112MM HSS FULLY GROUND LONG SERIES DRILL BIT",0.5,"HSS Drill Bits","6988888880355"],["HSS-FGL-3-100","3 X 100MM HSS FULLY GROUND LONG SERIES DRILL BIT",0.4,"HSS Drill Bits","6988888880300"],["HSS-FGL-4.5-126","4.5 X 126MM HSS FULLY GROUND LONG SERIES DRILL BIT",0.64,"HSS Drill Bits","6988888880454"],["HSS-FGL-4-119","4 X 119MM HSS FULLY GROUND LONG SERIES DRILL BIT",0.55,"HSS Drill Bits","6988888880409"],["HSS-FGL-5.5-139","5.5 X 139MM HSS FULLY GROUND LONG SERIES DRILL BIT",0.95,"HSS Drill Bits","6988888880553"],["HSS-FGL-5-132","5 X 132MM HSS FULLY GROUND LONG SERIES DRILL BIT",0.8,"HSS Drill Bits","6988888880508"],["HSS-FGL-6.5-148","6.5 X 148HSS FULLY GROUND LONG SERIES DRILL BIT",1.1,"HSS Drill Bits","6988888880652"],["HSS-FGL-6-139","6 X 139MM HSS FULLY GROUND LONG SERIES DRILL BIT",0.96,"HSS Drill Bits","6988888880607"],["HSS-FGL-7.5-165","7.5 X 165MM HSS FULLY GROUND LONG SERIES DRILL BIT",1.4,"HSS Drill Bits","6988888880751"],["HSS-FGL-7-156","7 X 156MM HSS FULLY GROUND LONG SERIES DRILL BIT",1.3,"HSS Drill Bits","6988888880706"],["HSS-FGL-8.5-165","8.5 X 165MM HSS FULLY GROUND LONG SERIES DRILL BIT",1.5,"HSS Drill Bits","6988888880850"],["HSS-FGL-8-165","8 X 165MM HSS FULLY GROUND LONG SERIES DRILL BIT",1.45,"HSS Drill Bits","6988888880805"],["HSS-FGL-9.5-175","9.5 X 175MM HSS FULLY GROUND LONG SERIES DRILL BIT",2.45,"HSS Drill Bits","6988888880959"],["HSS-FGL-9-175","9 X 175MM HSS FULLY GROUND LONG SERIES DRILL BIT",2.2,"HSS Drill Bits","6988888880904"],["HSS-CBRS-14.5","14.5MM HSS COBALT REDUCED SHANK DRILL BIT",10.5,"HSS Drill Bits","6988888881451"],["HSS-CBRS-14","14MM HSS COBALT REDUCED SHANK DRILL BIT",10.0,"HSS Drill Bits","6988526781402"],["HSS-CBRS-15.5","15.5MM HSS COBALT REDUCED SHANK DRILL BIT",11.5,"HSS Drill Bits","6988888881505"],["HSS-CBRS-15","15MM HSS COBALT REDUCED SHANK DRILL BIT",11.0,"HSS Drill Bits","6988888881505"],["HSS-CBRS-16.5","16.5MM HSS COBALT REDUCED SHANK DRILL BIT",12.0,"HSS Drill Bits","6988888881659"],["HSS-CBRS-16","16MM HSS COBALT REDUCED SHANK DRILL BIT",11.75,"HSS Drill Bits","6988526781600"],["HSS-CBRS-17.5","17.5MM HSS COBALT REDUCED SHANK DRILL BIT",12.75,"HSS Drill Bits","6988888881758"],["HSS-CBRS-17","17MM HSS COBALT REDUCED SHANK DRILL BIT",12.5,"HSS Drill Bits","6988888881703"],["HSS-CBRS-18.5","18.5MM HSS COBALT REDUCED SHANK DRILL BIT",13.5,"HSS Drill Bits","6901644715241"],["HSS-CBRS-18","18MM HSS COBALT REDUCED SHANK DRILL BIT",13.0,"HSS Drill Bits","8011779069404"],["HSS-CBRS-19.5","19.5MM HSS COBALT REDUCED SHANK DRILL BIT",14.5,"HSS Drill Bits","6988526781952"],["HSS-CBRS-19","19MM HSS COBALT REDUCED SHANK DRILL BIT",14.21,"HSS Drill Bits","6988526781907"],["HSS-CBRS-20.5","20.5MM HSS COBALT REDUCED SHANK DRILL BIT",16.0,"HSS Drill Bits","8011779069428"],["HSS-CBRS-20","20MM HSS COBALT REDUCED SHANK DRILL BIT",15.74,"HSS Drill Bits","6988526782003"],["HSS-CBRS-21.5","21.5MM HSS COBALT REDUCED SHANK DRILL BIT",17.0,"HSS Drill Bits","8011779215801"],["HSS-CBRS-21","21MM HSS COBALT REDUCED SHANK DRILL BIT",16.5,"HSS Drill Bits","6988526782102"],["HSS-CBRS-22.5","22.5MM HSS COBALT REDUCED SHANK DRILL BIT",17.75,"HSS Drill Bits","8011779215818"],["HSS-CBRS-22","22MM HSS COBALT REDUCED SHANK DRILL BIT",17.5,"HSS Drill Bits","6988526782201"],["HSS-CBRS-23.5","23.5MM HSS COBALT REDUCED SHANK DRILL BIT",18.64,"HSS Drill Bits","8011779215832"],["HSS-CBRS-23","23MM HSS COBALT REDUCED SHANK DRILL BIT",18.0,"HSS Drill Bits","6988526782300"],["HSS-CBRS-24.5","24.5MM HSS COBALT REDUCED SHANK DRILL BIT",20.04,"HSS Drill Bits","8011779069466"],["HSS-CBRS-24","24MM HSS COBALT REDUCED SHANK DRILL BIT",19.0,"HSS Drill Bits","6988526782409"],["HSS-CBRS-25","25MM HSS COBALT REDUCED SHANK DRILL BIT",21.0,"HSS Drill Bits","5988220782508"],["HSS-25PC-CBLT","25 PIECE HSS COBALT 1-13MM DRILL BIT SET",38.12,"HSS Drill Bits","5000394079779"],["HSS-25PC-TNM","25 PIECE HSS TITANIUM 1-13MM DRILL BIT SET",21.0,"HSS Drill Bits","318430181108"],["HSS-STB-20","20MM SHORT HSS FULLY GROUND COBALT REDUCED SHANK BIT",10.0,"HSS Drill Bits","7890203600830"],["HSS-STB-22","22MM SHORT HSS FULLY GROUND COBALT REDUCED SHANK BIT",12.0,"HSS Drill Bits","7890203600830"],["HSS-STB-25","25MM SHORT HSS FULLY GROUND COBALT REDUCED SHANK BIT",14.0,"HSS Drill Bits","7890203600830"],["HSS-STB-28","28MM SHORT HSS FULLY GROUND COBALT REDUCED SHANK BIT",17.0,"HSS Drill Bits","no barcode"],["HSS-STB-30","30MM SHORT HSS FULLY GROUND COBALT REDUCED SHANK BIT",18.0,"HSS Drill Bits","no barcode"],["HSS-STB-32","32MM SHORT HSS FULLY GROUND COBALT REDUCED SHANK BIT",19.0,"HSS Drill Bits","7890203600830"],["HSS-STB-35","35MM SHORT HSS FULLY GROUND COBALT REDUCED SHANK BIT",21.0,"HSS Drill Bits","7890203600830"],["HSS-STB-5-DBE","5MM SHORT HSS FULLY GROUND  DOUBLE ENDED DRILL BIT",0.7,"HSS Drill Bits","6988626780503"],["HSS-TPR-14","14MM HSS TAPERED SHANK DRILL BIT",5.68,"HSS Drill Bits","no barcode"],["HSS-TPR-16","16MM HSS TAPERED SHANK DRILL BIT",7.94,"HSS Drill Bits","4007140016140"],["HSS-TPR-17","17MM HSS TAPERED SHANK DRILL BIT",8.72,"HSS Drill Bits","7890203600830"],["HSS-TPR-18","18MM HSS TAPERED SHANK DRILL BIT",10.5,"HSS Drill Bits","no barcode"],["HSS-TPR-19","19MM HSS TAPERED SHANK DRILL BIT",10.67,"HSS Drill Bits","7890203600830"],["HSS-TPR-20","20MM HSS TAPERED SHANK DRILL BIT",11.93,"HSS Drill Bits","7890203600830"],["HSS-TPR-22","22MM HSS TAPERED SHANK DRILL BIT",12.6,"HSS Drill Bits","no barcode"],["HSS-TPR-25","25MM HSS TAPERED SHANK DRILL BIT",14.7,"HSS Drill Bits","out of stock"],["HSS-TPR-30","30MM HSS TAPERED SHANK DRILL BIT",19.95,"HSS Drill Bits","out of stock"],["HSS-TPR-32","32MM HSS TAPERED SHANK DRILL BIT",23.68,"HSS Drill Bits","no barcode"],["JSB-T118A","T118A JIGSAW BLADE BOSCH TYPE FOR METAL PK. 5",5.0,"Jigsaw Blades","6923681282364"],["JSB-T127D","T127D JIGSAW BLADE BOSCH TYPE FOR METAL PK. 5",5.15,"Jigsaw Blades","6923681262465"],["JSB-T101AO","T101AO JIGSAW BLADE BOSCH TYPE FOR WOOD PK.5",3.94,"Jigsaw Blades","6923681235834"],["JSB-T101B","T101B JIGSAW BLADE BOSCH TYPE FOR WOOD PK.5",3.94,"Jigsaw Blades","6923681235810"],["JSB-T101BR","T101BR JIGSAW BLADE BOSCH TYPE FOR WOOD PK.5",3.94,"Jigsaw Blades","6923681235827"],["JSB-T224D","T244D JIGSAW BLADE BOSCH TYPE FOR WOOD PK.5",3.94,"Jigsaw Blades","6923681235841"],["JSB-T301CD","T301CD JIGSAW BLADE BOSCH TYPE FOR WOOD LONGER BLADE PK.5",4.32,"Jigsaw Blades","6923681235858"],["MAG-25-PZ2-24PC","24 PIECE POZI 2 BIT SET 25MM",6.25,"Magnetic Bits","5398000089886"],["MAG-PZ-25","25MM POZI BITS",0.25,"Magnetic Bits","no barcode"],["MAG-PZ-50","50MM POZI BITS",0.33,"Magnetic Bits","no barcode"],["MAG-PZ-65","65MM POZI BITS",0.38,"Magnetic Bits","no barcode"],["MAG-HLD-100-60","MAGNETIC BIT HOLDER 100 X 60MM",0.92,"Magnetic Bits","5902628005656"],["MAG-HLD-CARD","MAGNETIC BIT HOLDER ON CARD",1.2,"Magnetic Bits","6902628005655"],["MAG-HLD-QCKR","QUICK RELEASE BIT HOLDER",2.5,"Magnetic Bits","5391180020113"],["MAG-25-T30-20PC","T30 X 25MM MAGNETIC BIT BAG 20",10.0,"Magnetic Bits","no barcode"],["MAG-50-T30-10PC","T30 X 50MM MAGNETIC BIT BAG 10",6.0,"Magnetic Bits","no barcode"],["MDB-14-350-RS","14 X 350MM MASONRY DRILL BIT REDUCED SHANK",4.2,"Masonry Bits","no barcode"],["MDB-16-200-RS","16 X 200MM MASONRY DRILL BIT REDUCED SHANK",2.68,"Masonry Bits","5021526361555"],["MDB-20-300-RS","20 X 300MM MASONRY DRILL BIT REDUCED SHANK",4.2,"Masonry Bits","7890203600830"],["MDB-10-150","10 X 150MM MASONRY DRILL BIT",1.13,"Masonry Bits","7896020360834"],["MDB-12-200","12 X 200MM MASONRY DRILL BIT",1.18,"Masonry Bits","6988526102016"],["MDB-5.5-150","5.5 X 150MM MASONRY DRILL BIT",1.0,"Masonry Bits","8011779070059"],["MDB-5-150","5 X 150MM MASONRY DRILL BIT",0.74,"Masonry Bits","out of stock"],["MDB-6.5-150","6.5 X 150MM MASONRY DRILL BIT",1.04,"Masonry Bits","8011779069145"],["MDB-6-150","6 X 150MM MASONRY DRILL BIT",1.03,"Masonry Bits","7896020360834"],["MDB-7-150","7 X 150MM MASONRY DRILL BIT",1.05,"Masonry Bits","8011779069121"],["MDB-8-150","8 X 150MM MASONRY DRILL BIT",1.1,"Masonry Bits","7896020360834"],["MDB-9-200","9 X 200MM MASONRY DRILL BIT",1.11,"Masonry Bits","8011779068995"],["SND-BLT-M80-X5","1220 X 150MM METAL SANDING BELTS 80G PKT. 5",10.0,"Miscellaneous","no barcode"],["SND-BLT-W100-X5","1220 X 150MM WOOD SANDING BELTS 100G PKT. 5",10.0,"Miscellaneous","no barcode"],["DCBS-6PC","6 PIECE DIAMOND CORE BIT SET 28X300 / 52X170 / 107X170",70.0,"Miscellaneous","no barcode"],["MSH-NUT-M14","M14 MUSHROOM NUT",5.66,"Miscellaneous","no barcode"],["RBS-12PC-1/4","ROUTER BIT SET 1/4 X 12 PIECE",25.0,"Miscellaneous","5902628210104"],["RBS-12PC-13","ROUTER BIT SET 13MM X 12 PIECE",28.0,"Miscellaneous","no barcode"],["MTBS-3PC","3 PIECE MULTI-TOOL BLADE SET",6.6,"Multi-Tool Blades","3165140357065"],["MTBS-5PC","5 PIECE MULTI-TOOL BLADE SET",9.0,"Multi-Tool Blades","3165140357069"],["MTBS-5PC-RSL","5 PIECE 32MM BIMETAL MULTI-TOOL BLADE SET",9.0,"Multi-Tool Blades","3165514035608"],["MTBS-7PC","7 PIECE MULTI-TOOL BLADE SET",12.0,"Multi-Tool Blades","3165140357068"],["GIA-8-140-X25","8 X 140MM GALVANISED INSULATION ANCHOR BAG 25 (MUSHROOMS)",3.0,"Mushrooms","3574660239140"],["GIA-8-50-X50","8 X 50MM GALVANISED INSULATION ANCHOR BAG 50 (MUSHROOM)",3.63,"Mushrooms","3574660239850"],["PDL-BRS-25","25MM BRASS PADLOCK",0.82,"Padlocks","53318997983414"],["PDL-BRS-35","35MM BRASS PADLOCK",1.22,"Padlocks","5398008099956"],["PDL-BRS-50","50MM BRASS PADLOCK",2.8,"Padlocks","5398008099925"],["PDL-BRS-50-HD","50MM BRASS PADLOCKS HEAVY DUTY",3.5,"Padlocks","5398008099924"],["PDL-BRS-50-LS","50MM BRASS PADLOCK LONG SHACKLE",3.6,"Padlocks","5398008099962"],["PDL-STL-70-CS","70MM STAINLESS STEEL PADLOCK CLOSE SHACKLE",4.5,"Padlocks","5398008099931"],["PDL-LAM-50","50MM LAMINATED WEATHERPROOF PADLOCK",2.8,"Padlocks","5398008099971"],["PDL-LAM-50-LS","50MM LAMINATED WEATHERPROOF PADLOCK LONG SHACKLE",3.8,"Padlocks","5398008099972"],["HLSW-PB-105","105MM HOLESAW PILOT DRILL BIT",1.2,"Holesaws","6988626799079"],["HLSW-PB-75","75MM HOLESAW PILOT DRILL BIT",1.04,"Holesaws","6988626799079"],["PBS-82-HSS","82MM HSS PLANER BLADE SET",2.5,"Planer Blades","5396856954655"],["PBS-82-TCT","82MM TCT PLANER BLADE SET",5.5,"Planer Blades","6901644815668"],["GNCB-16A-220V","16AMP PLUG 13V SOCKET 220V GENERATOR COMBI",8.1,"Electrical","3255660001592"],["PLG-13A-220V","13AMP 220V FUSED PLUG",1.25,"Electrical","3255660001540"],["PLG-16A-110V-O","16AMP 3 PIN 110V PLUG ORIGINAL TYPE",1.95,"Electrical","3255660002530"],["PLG-16A-220V-O","16AMP 3 PIN 220V PLUG ORIGINAL TYPE",1.95,"Electrical","3255660002531"],["PLG-16A-415V-ET-4P","16AMP 220-415V EASY TWIST 4 PIN PLUG",4.0,"Electrical","3255660001680"],["PLG-16A-110V-ST","16AMP 3PIN 110V EASY FIX PLUG SCREW TYPE",2.9,"Electrical","3255660001530"],["PLG-16A-110V-ET","16AMP 3PIN 110V EASY TWIST PLUG",2.1,"Electrical","no barcode"],["PLG-16A-220V-ST","16AMP 3PIN 220V EASY FIX PLUG SCREW TYPE",2.9,"Electrical","3255660001531"],["PLG-32A-110V","32AMP 110V PLUGS NEW SCREW TYPE",5.0,"Electrical","9004671016226"],["PLG-32A-415V-ET-4P","32AMP 220-415V EASY TWIST 4 PIN PLUG",5.0,"Electrical","3255660111690"],["PLG-32A-415V-ET-5P","32AMP 220-415V EASY TWIST 5 PIN PLUG",4.5,"Electrical","no barcode"],["PLG-32A-220V-ET","32AMP 220V NEW SCREW TYPE",5.0,"Electrical","3255660001570"],["SCT-16A-110V-ST","16AMP 110V EASY FIX CONNECTOR SOCKET SCREW TYPE",3.0,"Electrical","3576602391435"],["SCT-16A-110V-GEN","16AMP 110V GENERATOR SOCKET",3.0,"Electrical","no barcode"],["SCT-16A-110V-W","16AMP 110V WALL SOCKET",4.5,"Electrical","3576602391436"],["SCT-16A-415V-ET-4P","16AMP 220-415V EASY TWIST 4 HOLE SOCKET",5.0,"Electrical","3255660001681"],["SCT-16A-220V-ST","16AMP 220V EASY FIX CONNECTOR SOCKET SCREW TYPE",3.0,"Electrical","3255660001561"],["SCT-16A-220V-GEN","16AMP 220V GENERATOR SOCKET",3.0,"Electrical","no barcode"],["SCT-16A-220V-W","16AMP 220V WALL SOCKET",4.5,"Electrical","no barcode"],["SCT-32A-110V","32AMP 110V SOCKET",5.0,"Electrical","3255660001571"],["SCT-32A-110V-W","32AMP 110V WALL SOCKET",6.0,"Electrical","no barcode"],["SCT-32A-415V-ET-4P","32AMP 220-415V EASY TWIST 4 HOLE SOCKET",6.0,"Electrical","no barcode"],["SCT-32A-415V-ET-5P","32AMP 220-415V EASY TWIST 5 HOLE SOCKET",6.0,"Electrical","3255660111691"],["SCT-32A-220V-ET","32AMP 220V SOCKET NEW SCREW TYPE",5.5,"Electrical","3255660001671"],["SCT-32A-220V-ET-W","32AMP 220V WALL SOCKET",6.5,"Electrical","no barcode"],["SCT-MLT-X3-110V","MULTISOCKET 3 OUTLET 110V",12.0,"Electrical","no barcode"],["SCT-MLT-X3-220V","MULTISOCKET 3 OUTLET 220V",12.0,"Electrical","3255660011541"],["SPL-16A-110V-X4","4 WAY 110V 16AMP SPLITTER BOX 2.5M CORD",24.62,"Electrical","5010214868552"],["RSB-150-10TPI-BM","POFT 150MM 10TPI BIMETAL RECIPROCATING SAW BLADE PK.10",12.76,"Reciprocating Saw Blades","4007871973019"],["RSB-200-14TPI-BM","POFT 200MM 14TPI BIMETAL RECIPROCATING SAW BLADE PK.10",19.23,"Reciprocating Saw Blades","no barcode"],["RSB-300-10TPI-BM","POFT 300MM 10TPI BIMETAL RECIPROCATING SAW BLADE PK.10",24.5,"Reciprocating Saw Blades","5391181187877"],["RSB-200-6TPI-BM","LIDAC 200 X 19 X 6T REC. S BIMETAL WOOD & PLASTIC CUTTING PK.5",14.75,"Reciprocating Saw Blades","7391639001173"],["RSB-150-6TPI-W","POFT 150MM 6TPI WOOD CUTTING RECIPROCATING SAW BLADE PK.10",12.0,"Reciprocating Saw Blades","4007871973040"],["RSB-200-6TPI-W","POFT 200MM 6TPI WOOD CUTTING RECIPROCATING SAW BLADE PK.10",12.23,"Reciprocating Saw Blades","5391181187815"],["RSB-300-6TPI-W","POFT 300MM 6TPI WOOD CUTTING RECIPROCATING SAW BLADE PK.10",18.0,"Reciprocating Saw Blades","5391181187839"],["RVT-TL-LZT-HD","RIVET TOOL LAZY TONG HEAVY DUTY",28.0,"Rivets","4512946743046"],["RVT-TL-LZT","RIVET TOOL LAZY TONG 800MM",24.0,"Rivets","4007871972051"],["RVT-TL-LNG","RIVET TOOL LONG 530MM",20.0,"Rivets","4007871972043"],["RVT-TL-1HND","RIVET TOOL ONE HAND",8.5,"Rivets","4007871972080"],["RVT-TL-SHR-HD","RIVET TOOL SHORT HEAVY DUTY 360MM",24.0,"Rivets","4512946743048"],["RVT-SET-100","100PC. RIVET SET 2.4X6.4, 3.2X6.4, 4X6.4, 4.8X6.4",2.05,"Rivets","5391180031003"],["RVT-SS-4.9-12","4.9 X 12MM STAINLESS STEEL BLIND RIVETS",9.71,"Rivets","5016362745102"],["RVT-SS-4.9-16","4.9 X 16MM STAINLESS STEEL BLIND RIVETS",9.98,"Rivets","5046602840021"],["RVT-SS-4.9-21","4.9 X 21MM STAINLESS STEEL BLIND RIVETS",11.59,"Rivets","5066603842022"],["RVT-AL-3.2-11","3.2 X 11MM ALUMINUM BLIND RIVETS",1.2,"Rivets","5012594440655"],["RVT-AL-3.2-9","3.2 X 9MM ALUMINUM BLIND RIVETS",1.1,"Rivets","5016585843609"],["RVT-AL-3.9-11","3.9 X 11MM ALUMINUM BLIND RIVETS",1.38,"Rivets","5064541822434"],["RVT-AL-3.9-13","3.9 X 13MM ALUMINUM BLIND RIVETS",1.4,"Rivets","5016686842365"],["RVT-AL-3.9-9","3.9 X 9MM ALUMINUM BLIND RIVETS",1.33,"Rivets","5066601840129"],["RVT-AL-4.9-12","4.9 X 12MM ALUMINUM BLIND RIVETS",1.89,"Rivets","5026686842265"],["RVT-AL-4.9-13","4.9 X 13MM ALUMINUM BLIND RIVETS",2.0,"Rivets","5026362745101"],["RVT-AL-4.9-16","4.9 X 16MM ALUMINUM BLIND RIVETS",2.1,"Rivets","5036462745307"],["RVT-AL-4.9-18","4.9 X 18MM ALUMINUM BLIND RIVETS",2.15,"Rivets","5026686842265"],["RVT-AL-4.9-21","4.9 X 21MM ALUMINUM BLIND RIVETS",2.25,"Rivets","5042453678141"],["RVT-AL-4.9-26","4.9 X 26MM ALUMINUM BLIND RIVETS",3.25,"Rivets","5054542822465"],["RVT-AL-6.4-20","6.4 X 20MM ALUMINUM BLIND RIVETS",4.0,"Rivets","5016465843200"],["RVT-AL-6.4-26","6.4 X 26MM ALUMINUM BLIND RIVETS",4.4,"Rivets","5042453678141"],["RVT-AL-4.9-13-WH","4.9 X 13MM ALUMINUM BLIND RIVETS WIDE HEAD",3.19,"Rivets","5016465742305"],["RVT-AL-4.9-16-WH","4.9 X 16MM ALUMINUM BLIND RIVETS WIDE HEAD",3.41,"Rivets","5016363745033"],["RVT-AL-4.9-21-WH","4.9 X 21MM ALUMINUM BLIND RIVETS WIDE HEAD",4.49,"Rivets","8004601008597"],["RVT-AL-4.9-26-WH","4.9 X 26MM ALUMINUM BLIND RIVETS WIDE HEAD",5.52,"Rivets","5054542822465"],["RVT-AL-6.4-18-WH","6.4 X 18MM ALUMINUM BLIND RIVETS WIDE HEAD",5.62,"Rivets","5098768127805"],["RVT-AL-6.4-26-WH","6.4 X 26MM ALUMINUM BLIND RIVETS WIDE HEAD",7.54,"Rivets","5042453678141"],["RBC-ADP-MT2-19","19.05MM X MT2 MAG CUTTER TO BENCH DRILL ADAPTOR",41.0,"Rota Broach Cutters","5850900139271"],["RBC-ADP-MT2-19-QR","19.05MM X MT2 MAG CUTTER TO BENCH DRILL QUICK RELEASE ADAPTOR",90.0,"Rota Broach Cutters","5791874813241"],["RBC-ADP-MT3-19","19.05MM X MT3 MAG CUTTER TO BENCH DRILL ADAPTOR",41.0,"Rota Broach Cutters","5791866813259"],["RBC-ADP-MT3-32","31.75MM X MT2 MAG CUTTER TO BENCH DRILL ADAPTOR",47.31,"Rota Broach Cutters","5791866813273"],["RBC-EXT-IBK100","IBK100 WELDON SHANK ROTA BROACH CUTTER 100MM EXTENSION",18.5,"Rota Broach Cutters","no barcode"],["RBC-ADP-IBK14","IBK14 WELDON SHANK ADAPTOR 1/2\" X 20 UNF THREAD",8.5,"Rota Broach Cutters","8004601201677"],["RBC-ADP-IBK15","IBK15 65MM ADAPTOR -1/2\" X 20 MALE TO 1/2\" X 20 FEMALE",11.76,"Rota Broach Cutters","5895090399128"],["RBC-ADP-IBK16-14","IBK16-14 WELDON SHANK ADAPTOR TO B16",11.13,"Rota Broach Cutters","no barcode"],["RBC-EXT-IBK25","IBK25 WELDON SHANK ROTA BROACH CUTTER 25MM EXTENSION",8.52,"Rota Broach Cutters","no barcode"],["RBC-EXT-IBK50","IBK50 WELDON SHANK ROTA BROACH CUTTER 50MM EXTENSION",11.0,"Rota Broach Cutters","no barcode"],["RBC-EXT-IBK75","IBK75 WELDON SHANK ROTA BROACH CUTTER 75MM EXTENSION",15.0,"Rota Broach Cutters","8004601201677"],["RBC-12-50","12MM X 50MM ROTA BROACH CUTTER",12.75,"Rota Broach Cutters","5895090399616"],["RBC-13-50","13MM X 50MM ROTA BROACH CUTTER",12.85,"Rota Broach Cutters","6009515814472"],["RBC-14-50","14MM X 50MM ROTA BROACH CUTTER",13.0,"Rota Broach Cutters","6009515814465"],["RBC-15-50","15MM X 50MM ROTA BROACH CUTTER",13.5,"Rota Broach Cutters","6930025811173"],["RBC-16-50","16MM X 50MM ROTA BROACH CUTTER",14.05,"Rota Broach Cutters","6009515814519"],["RBC-17-50","17MM X 50MM ROTA BROACH CUTTER",14.5,"Rota Broach Cutters","5012594440679"],["RBC-18-50","18MM X 50MM ROTA BROACH CUTTER",15.02,"Rota Broach Cutters","5895090399630"],["RBC-19-50","19MM X 50MM ROTA BROACH CUTTER",15.5,"Rota Broach Cutters","5012594433510"],["RBC-20-50","20MM X 50MM ROTA BROACH CUTTER",16.22,"Rota Broach Cutters","5895090399647"],["RBC-21-50","21MM X 50MM ROTA BROACH CUTTER",16.5,"Rota Broach Cutters","5012594433428"],["RBC-22-50","22MM X 50MM ROTA BROACH CUTTER",18.09,"Rota Broach Cutters","6009515814632"],["RBC-23-50","23MM X 50MM ROTA BROACH CUTTER",18.5,"Rota Broach Cutters","5396856954549"],["RBC-24-50","24MM X 50MM ROTA BROACH CUTTER",19.0,"Rota Broach Cutters","5895090399654"],["RBC-25-50","25MM X 50MM ROTA BROACH CUTTER",19.5,"Rota Broach Cutters","5895090399661"],["RBC-26-50","26MM X 50MM ROTA BROACH CUTTER",21.21,"Rota Broach Cutters","95158146946"],["RBC-27-50","27MM X 50MM ROTA BROACH CUTTER",21.5,"Rota Broach Cutters","no barcode"],["RBC-28-50","28MM X 50MM ROTA BROACH CUTTER",24.0,"Rota Broach Cutters","3850900139631"],["RBC-29-50","29MM X 50MM ROTA BROACH CUTTER",24.5,"Rota Broach Cutters","8004601008597"],["RBC-30-50","30MM X 50MM ROTA BROACH CUTTER",26.0,"Rota Broach Cutters","3850900139648"],["RBC-31-50","31MM X 50MM ROTA BROACH CUTTER",26.5,"Rota Broach Cutters","5011566025104"],["RBC-32-50","32MM X 50MM ROTA BROACH CUTTER",28.0,"Rota Broach Cutters","3850900139655"],["RBC-33-50","33MM X 50MM ROTA BROACH CUTTER",29.0,"Rota Broach Cutters","3255600017904"],["RBC-34-50","34MM X 50MM ROTA BROACH CUTTER",30.0,"Rota Broach Cutters","8004601010699"],["RBC-35-50","35MM X 50MM ROTA BROACH CUTTER",32.0,"Rota Broach Cutters","3850900139686"],["RBC-36-50","36MM X 50MM ROTA BROACH CUTTER",33.0,"Rota Broach Cutters","8017064008066"],["RBC-37-50","37MM X 50MM ROTA BROACH CUTTER",33.5,"Rota Broach Cutters","5396856954655"],["RBC-38-50","38MM X 50MM ROTA BROACH CUTTER",34.14,"Rota Broach Cutters","5895090399685"],["RBC-40-50","40MM X 50MM ROTA BROACH CUTTER",35.7,"Rota Broach Cutters","5895090399692"],["RBC-42-50","42MM X 50MM ROTA BROACH CUTTER",36.0,"Rota Broach Cutters","5012594430472"],["RBC-43-50","43MM X 50MM ROTA BROACH CUTTER",37.0,"Rota Broach Cutters","5012594440532"],["RBC-44-50","44MM X 50MM ROTA BROACH CUTTER",38.0,"Rota Broach Cutters","5012594440525"],["RBC-45-50","45MM X 50MM ROTA BROACH CUTTER",38.5,"Rota Broach Cutters","5012594430465"],["RBC-46-50","46MM X 50MM ROTA BROACH CUTTER",39.5,"Rota Broach Cutters","5012594440655"],["RBC-48-50","48MM X 50MM ROTA BROACH CUTTER",43.0,"Rota Broach Cutters","5012594430670"],["RBC-50-50","50MM X 50MM ROTA BROACH CUTTER",46.34,"Rota Broach Cutters","8017064000817"],["RBC-55-50","55MM X 50MM ROTA BROACH CUTTER",50.0,"Rota Broach Cutters","8004601038945"],["RBC-60-50","60MM X 50MM ROTA BROACH CUTTER",63.92,"Rota Broach Cutters","8004601007262"],["RBC-65-50","65MM X 50MM ROTA BROACH CUTTER",82.9,"Rota Broach Cutters","5012594443526"],["RBC-PP-130","6.34MM X 130MM ROTA BROACH CUTTER PILOT PIN",4.0,"Rota Broach Cutters","out of stock"],["RBC-PP-155","6.34MM X 155MM ROTA BROACH CUTTER PILOT PIN",4.5,"Rota Broach Cutters","no barcode"],["RBC-PP-103","6.35MM X 103MM ROTA BROACH CUTTER PILOT PIN",2.0,"Rota Broach Cutters","3850900139297"],["RBC-PP-90","6.35MM X 90MM ROTA BROACH CUTTER PILOT PIN",2.0,"Rota Broach Cutters","no barcode"],["RBC-PP-77","6.35MM X 77MM ROTA BROACH CUTTER PIN",1.5,"Rota Broach Cutters","3850900139280"],["RBC-PP-8-90","8MM X 90MM TCT ROTA BROACH CUTTER PILOT PIN",2.0,"Rota Broach Cutters","no barcode"],["RBC-SET-7PC","7 PIECE ROTA BROACH CUTTER SET",66.0,"Rota Broach Cutters","916008001102"],["RBS-SLD-10-35","10MM X 35MM ROTA BROACH CUTTER SOLID",6.0,"Rota Broach Cutters","5850900132951"],["RBS-SLD-5-35","5MM X 35MM ROTA BROACH CUTTER SOLID",6.62,"Rota Broach Cutters","3255667016971"],["RBS-SLD-6-35","6MM X 35MM ROTA BROACH CUTTER SOLID",6.75,"Rota Broach Cutters","3255667047814"],["RBS-SLD-8-35","8MM X 35MM ROTA BROACH CUTTER SOLID",7.36,"Rota Broach Cutters","5055660902572"],["RBC-10-30","10MM X 30MM ROTA BROACH CUTTER",7.42,"Rota Broach Cutters","5850900132951"],["RBC-11-30","11MM X 30MM ROTA BROACH CUTTER",7.48,"Rota Broach Cutters","7890203600830"],["RBC-12-30","12MM X 30MM ROTA BROACH CUTTER",8.02,"Rota Broach Cutters","8004601029240"],["RBC-13-30","13MM X 30MM ROTA BROACH CUTTER",8.54,"Rota Broach Cutters","7890203600830"],["RBC-14-30","14MM X 30MM ROTA BROACH CUTTER",9.4,"Rota Broach Cutters","3850900139327"],["RBC-15-30","15MM X 30MM ROTA BROACH CUTTER",9.75,"Rota Broach Cutters","7890203600830"],["RBC-16-30","16MM X 30MM ROTA BROACH CUTTER",10.6,"Rota Broach Cutters","7890203600847"],["RBC-17-30","17MM X 30MM ROTA BROACH CUTTER",10.82,"Rota Broach Cutters","7890203600830"],["RBC-18-30","18MM X 30MM ROTA BROACH CUTTER",11.6,"Rota Broach Cutters","5850900139318"],["RBC-19-30","19MM X 30MM ROTA BROACH CUTTER",11.62,"Rota Broach Cutters","7890203600830"],["RBC-20-30","20MM X 30MM ROTA BROACH CUTTER",12.21,"Rota Broach Cutters","5850900139387"],["RBC-21-30","21MM X 30MM ROTA BROACH CUTTER",12.5,"Rota Broach Cutters","3850900139372"],["RBC-22-30","22MM X 30MM ROTA BROACH CUTTER",13.27,"Rota Broach Cutters","3850900139389"],["RBC-23-30","23MM X 30MM ROTA BROACH CUTTER",14.0,"Rota Broach Cutters","3850900139396"],["RBC-24-30","24MM X 30MM ROTA BROACH CUTTER",14.27,"Rota Broach Cutters","5055175720173"],["RBC-25-30","25MM X 30MM ROTA BROACH CUTTER",14.8,"Rota Broach Cutters","3255667016971"],["RBC-26-30","26MM X 30MM ROTA BROACH CUTTER",15.74,"Rota Broach Cutters","8809280460243"],["RBC-27-30","27MM X 30MM ROTA BROACH CUTTER",16.63,"Rota Broach Cutters","3850900139433"],["RBC-28-30","28MM X 30MM ROTA BROACH CUTTER",16.89,"Rota Broach Cutters","3850900139419"],["RBC-29-30","29MM X 30MM ROTA BROACH CUTTER",17.0,"Rota Broach Cutters","3850900139884"],["RBC-30-30","30MM X 30MM ROTA BROACH CUTTER",17.53,"Rota Broach Cutters","8809280460250"],["RBC-31-30","31MM X 30MM ROTA BROACH CUTTER",18.5,"Rota Broach Cutters","3850900139907"],["RBC-32-30","32MM X 30MM ROTA BROACH CUTTER",18.98,"Rota Broach Cutters","6009515814786"],["RBC-33-30","33MM X 30MM ROTA BROACH CUTTER",19.48,"Rota Broach Cutters","3805900139662"],["RBC-34-30","34MM X 30MM ROTA BROACH CUTTER",20.55,"Rota Broach Cutters","5055175720067"],["RBC-35-30","35MM X 30MM ROTA BROACH CUTTER",20.99,"Rota Broach Cutters","5055175720074"],["RBC-36-30","36MM X 30MM ROTA BROACH CUTTER",21.0,"Rota Broach Cutters","8809280460267"],["RBC-37-30","37MM X 30MM ROTA BROACH CUTTER",21.5,"Rota Broach Cutters","5850900139967"],["RBC-38-30","38MM X 30MM ROTA BROACH CUTTER",22.5,"Rota Broach Cutters","5055175720074"],["RBC-39-30","39MM X 30MM ROTA BROACH CUTTER",22.62,"Rota Broach Cutters","3850900139983"],["RBC-40-30","40MM X 30MM ROTA BROACH CUTTER",22.87,"Rota Broach Cutters","3255667008921"],["RBC-41-30","41MM X 30MM ROTA BROACH CUTTER",26.6,"Rota Broach Cutters","5850900140000"],["RBC-42-30","42MM X 30MM ROTA BROACH CUTTER",27.9,"Rota Broach Cutters","7890223600834"],["RBC-43-30","43MM X 30MM ROTA BROACH CUTTER",28.0,"Rota Broach Cutters","3850900140026"],["RBC-44-30","44MM X 30MM ROTA BROACH CUTTER",28.25,"Rota Broach Cutters","3850900139495"],["RBC-45-30","45MM X 30MM ROTA BROACH CUTTER",34.0,"Rota Broach Cutters","5850900140048"],["RBC-46-30","46MM X 30MM ROTA BROACH CUTTER",34.25,"Rota Broach Cutters","7890203600830"],["RBC-47-30","47MM X 30MM ROTA BROACH CUTTER",36.0,"Rota Broach Cutters","3850900140064"],["RBC-48-30","48MM X 30MM ROTA BROACH CUTTER",36.5,"Rota Broach Cutters","3850900140071"],["RBC-50-30","50MM X 30MM ROTA BROACH CUTTER",38.14,"Rota Broach Cutters","8435146713385"],["RBC-51-30","51MM X 30MM ROTA BROACH CUTTER",38.15,"Rota Broach Cutters","3850900139556"],["RBC-52-30","52MM X 30MM ROTA BROACH CUTTER",42.61,"Rota Broach Cutters","6009515818951"],["RBC-55-30","55MM X 30MM ROTA BROACH CUTTER",42.63,"Rota Broach Cutters","7890203600830"],["RBC-58-30","58MM X 30MM ROTA BROACH CUTTER",52.0,"Rota Broach Cutters","8435146713392"],["RBC-60-30","60MM X 30MM ROTA BROACH CUTTER",56.5,"Rota Broach Cutters","7890203600830"],["RBC-62-30","62MM X 30MM ROTA BROACH CUTTER",64.0,"Rota Broach Cutters","8017064006970"],["RBC-65-30","65MM X 30MM ROTA BROACH CUTTER",69.0,"Rota Broach Cutters","7902036008315"],["RBC-TCT-12-35","12MM X 35MM TCT ROTA BROACH CUTTER",18.67,"Rota Broach Cutters","5895090399111"],["RBC-TCT-14-35","14MM X 35MM TCT ROTA BROACH CUTTER",19.8,"Rota Broach Cutters","3850900139754"],["RBC-TCT-16-35","16MM X 35MM TCT ROTA BROACH CUTTER",20.0,"Rota Broach Cutters","3850900139778"],["RBC-TCT-18-35","18MM X 35MM TCT ROTA BROACH CUTTER",21.0,"Rota Broach Cutters","3850900139785"],["RBC-TCT-20-35","20MM X 35MM TCT ROTA BROACH CUTTER",22.0,"Rota Broach Cutters","3850900139792"],["RBC-TCT-22-35","22MM X 35MM TCT ROTA BROACH CUTTER",23.0,"Rota Broach Cutters","3850900139815"],["RBC-TCT-25-35","25MM X 35MM TCT ROTA BROACH CUTTER",23.2,"Rota Broach Cutters","3850900139846"],["RBC-TCT-26-35","26MM X 35MM TCT ROTA BROACH CUTTER",24.0,"Rota Broach Cutters","3850900139853"],["RBC-TCT-30-35","30MM X 35MM TCT ROTA BROACH CUTTER",25.0,"Rota Broach Cutters","3850900139891"],["RBC-TCT-32-35","32MM X 35MM TCT ROTA BROACH CUTTER",25.88,"Rota Broach Cutters","3850900139914"],["RBC-TCT-34-35","34MM X 35MM TCT ROTA BROACH CUTTER",26.0,"Rota Broach Cutters","3850900139938"],["RBC-TCT-36-35","36MM X 35MM TCT ROTA BROACH CUTTER",31.0,"Rota Broach Cutters","3850900139952"],["RBC-TCT-38-35","38MM X 35MM TCT ROTA BROACH CUTTER",31.5,"Rota Broach Cutters","3850900140019"],["RBC-TCT-40-35","40MM X 35MM TCT ROTA BROACH CUTTER",32.0,"Rota Broach Cutters","3850900139990"],["RBC-TCT-51-35","51MM X 35MM TCT ROTA BROACH CUTTER",42.0,"Rota Broach Cutters","3850900140101"],["RBC-TCT-60-35","60MM X 35MM TCT ROTA BROACH CUTTER",46.0,"Rota Broach Cutters","3850900140118"],["SFT-DM-PF3","FFP3 ACTIVE CARBON PARTICULATE RESPIRATORY VALVED MASK",2.0,"Safety Equipment","5012594433452"],["SFT-DM-PF2","PF2 DUST MASKS",1.0,"Safety Equipment","3574660239823"],["SFT-EM","EAR MUFFS",3.18,"Safety Equipment","no barcode"],["SFT-EM-SSP","EAR MUFFS COMPLETE WITH SAFETY SPECS",13.12,"Safety Equipment","no barcode"],["SFT-EM-FLD","FOLDING TYPE EAR MUFFS",4.44,"Safety Equipment","no barcode"],["SFT-EP-CRD","CORDED EAR PLUGS",0.6,"Safety Equipment","no barcode"],["SFT-HB","HEAD BAND FOR FACE SHIELD",3.5,"Safety Equipment","no barcode"],["SFT-FS-VSR","FACE SHIELD INCLUDING CLEAR VISOR",6.5,"Safety Equipment","no barcode"],["SFT-FS-MSH","FACE SHIELD INCLUDING MESH",7.0,"Safety Equipment","no barcode"],["SFT-MSH","SAFETY MESH FOR HEAD BAND",3.5,"Safety Equipment","no barcode"],["SFT-VSR","VISOR FOR HEAD BAND",2.54,"Safety Equipment","5010255793998"],["SFT-VSR-ALU","VISOR FOR HEAD BAND WITH ALUMINUM STRIP",3.55,"Safety Equipment","no barcode"],["SFT-GLS-CLR-L","CLEAR GLASS (LARGE)",0.26,"Safety Equipment","5051388115249"],["SFT-GLS-CLR-S","CLEAR GLASS (SMALL)",0.26,"Safety Equipment","no barcode"],["SFT-GGL-CLR","CLEAR GOGGLE ANTI SPLASH & ANTI IMPACT",3.66,"Safety Equipment","no barcode"],["SFT-GLS-DRK-L","DARK GLASS (LARGE)",0.83,"Safety Equipment","no barcode"],["SFT-GLS-DRK-S","DARK GLASS (SMALL)",0.83,"Safety Equipment","no barcode"],["SFT-GLV-GREY","GREY GLOVES",1.52,"Safety Equipment","3255667044486"],["SFT-GLV-ORNG","ORANGE GLOVES",1.34,"Safety Equipment","3255667002714"],["SFT-GLV-RED","RED GLOVES",1.1,"Safety Equipment","8017064001241"],["SFT-CORD","CORD FOR SAFETY SPECS",0.15,"Safety Equipment","no barcode"],["SFT-KNPDS","GEL KNEE PADS",13.0,"Safety Equipment","5392464626755"],["SFT-SPEC","SAFETY SPECTACLES CE ANTI SCRATCH INC. CORD",3.18,"Safety Equipment","no barcode"],["ERT-CLMP","EARTH CLAMP",3.18,"Welding","no barcode"],["ELC-HOLD","ELECTRODE HOLDER",8.25,"Welding","no barcode"],["SFT-WLD-SHLD-FU","FLIP UP WELDING SHIELD",8.25,"Safety Equipment","no barcode"],["SFT-WLD-SHLD-HH","HAND HELD WELDING SHIELD",4.0,"Safety Equipment","3574660239826"],["SCR-DRV-7PC","7 PIECE VDE SCREWDRIVER SET",7.0,"Screwdrivers","5391180010015"],["SCR-PHS-TSTR","PHASE TESTER 250V 190MM",0.78,"Screwdrivers","5391180080018"],["SDS-AT-10-225","10 X 225MM A TAPER DRILL BIT",2.5,"SDS Drill Bits","5902628101327"],["SDSP-ADP-1/2-20","1/2 X 20 SDS PLUS ADAPTOR",5.08,"SDS Drill Bits","6901644715524"],["SDSM-SDSP-ADP","SDS MAX TO PLUS ADAPTOR",14.0,"SDS Drill Bits","5902628210180"],["SDSP-CHZ-14-250","14 X 250MM SDS PLUS POINT CHISEL",3.5,"SDS Drill Bits","5902628200068"],["SDSM-CHZ-18-400","18 X 400MM SDS MAX POINT CHISEL",6.5,"SDS Drill Bits","230032221078"],["SDSP-CHZ-20-200","20 X 200MM SDS PLUS CHISEL",3.4,"SDS Drill Bits","5902628200136"],["SDSP-CHZ-20-250","20 X 250MM SDS PLUS CHISEL",3.5,"SDS Drill Bits","5902628210111"],["SDSP-CHZ-20-280","20 X 280MM SDS PLUS CHISEL",4.25,"SDS Drill Bits","5902628210128"],["SDSM-CHZ-22-280","22 X 280MM SDS MAX GOUGE CHISEL",5.25,"SDS Drill Bits","5902628200099"],["SDSP-CHZ-22-280","22 X 280MM SDS PLUS GOUGE CHISEL",5.0,"SDS Drill Bits","5902628200129"],["SDSM-CHZ-25-280","25 X 280MM SDS MAX CHISEL",4.5,"SDS Drill Bits","5902628200075"],["SDSP-CHZ-25-280","25 X 280MM SDS PLUS CHISEL",4.5,"SDS Drill Bits","8902628351149"],["SDSM-CHZ-25-400","25 X 400MM SDS MAX CHISEL",5.7,"SDS Drill Bits","5902628200013"],["SDSP-CHZ-32-200","32 X 200MM SDS PLUS BRICK REMOVING CHISEL",8.25,"SDS Drill Bits","5902656356195"],["SDSP-CHZ-40-250","40  X 250MM SDS PLUS SHARPENING SPADE CHISEL",6.0,"SDS Drill Bits","5902656356249"],["SDSM-CHZ-40-280","40 X 280MM SDS MAX SPADE CHISEL",5.5,"SDS Drill Bits","5902628200082"],["SDSP-CHZ-40-280","40 X 280MM SDS PLUS CHISEL",5.0,"SDS Drill Bits","5902628210135"],["SDSP-CHZ-50-250","50 X 250MM SDS PLUS CHISEL",5.5,"SDS Drill Bits","8902628351118"],["SDSP-CHZ-50-280","50 X 280MM SDS PLUS CHISEL",6.0,"SDS Drill Bits","8902628351125"],["SDSM-CHZ-50-400","50 X 400MM SDS MAX CHISEL",6.5,"SDS Drill Bits","5902628000217"],["SDSM-CHZ-75-400","75 X 400MM SDS MAX CHISEL",6.9,"SDS Drill Bits","5902628000217"],["SDS-CB-115-MAX-PLS","115MM SDS CORE THREADED TO SUIT MAX OR PLUS",24.0,"SDS Drill Bits","5902628200006"],["SDSP-CB-50-90","50 X 90MM SDS PLUS CORE BIT",7.75,"SDS Drill Bits","5902628210197"],["SDSM-DT-115-1000","115 X 1000MM SDS MAX DRILL THROUGH BIT",230.0,"SDS Drill Bits","5902656356171"],["SDSM-DT-115-600","115 X 600MM SDS MAX DRILL THROUGH BIT",193.68,"SDS Drill Bits","5902656356126"],["SDSM-DT-35-1000","35 X 1000MM SDS MAX DRILL THROUGH BIT",73.0,"SDS Drill Bits","5902656356133"],["SDSM-DT-35-600","35 X 600MM SDS MAX DRILL THROUGH BIT",61.5,"SDS Drill Bits","5902656356010"],["SDSM-DT-40-1000","40 X 1000MM SDS MAX DRILL THROUGH BIT",75.0,"SDS Drill Bits","5902656356140"],["SDSM-DT-40-600","40 X 600MM SDS MAX DRILL THROUGH BIT",62.5,"SDS Drill Bits","5902656356119"],["SDSM-DT-45-1000","45 X 1000MM SDS MAX DRILL THROUGH BIT",81.54,"SDS Drill Bits","5902656356201"],["SDSM-DT-45-600","45 X 600MM SDS MAX DRILL THROUGH BIT",66.0,"SDS Drill Bits","5902656356027"],["SDSM-DT-50-1000","50 X 1000MM SDS MAX DRILL THROUGH BIT",82.5,"SDS Drill Bits","5902656356157"],["SDSM-DT-50-600","50 X 600MM SDS MAX DRILL THROUGH BIT",72.0,"SDS Drill Bits","5902656356034"],["SDSM-DT-55-1000","55 X 1000MM SDS MAX DRILL THROUGH BIT",87.0,"SDS Drill Bits","5902656356164"],["SDSM-DT-55-600","55 X 600MM SDS MAX DRILL THROUGH BIT",80.0,"SDS Drill Bits","5902656356041"],["SDSM-DT-65-1000","65 X 1000MM SDS MAX DRILL THROUGH BIT",117.24,"SDS Drill Bits","5902656356218"],["SDSM-DT-65-600","65 X 600MM SDS MAX DRILL THROUGH BIT",85.0,"SDS Drill Bits","5902656356058"],["SDSM-DT-72-600","72 X 600MM SDS MAX DRILL THROUGH BIT",95.0,"SDS Drill Bits","5902656356065"],["SDSM-DT-80-600","80 X 600MM SDS MAX DRILL THROUGH BIT",114.25,"SDS Drill Bits","5902656356072"],["SDSM-DT-85-600","85 X 600MM SDS MAX DRILL THROUGH BIT",127.0,"SDS Drill Bits","5902656356089"],["SDSM-FLSCRP-6","SDS MAX 6\" FLOOR SCRAPER",55.0,"SDS Drill Bits","5902618640157"],["SDSM-12-280","12 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",7.35,"SDS Drill Bits","5902628100962"],["SDSM-12-340","12 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",8.93,"SDS Drill Bits","5902628100979"],["SDSM-12-600","12 X 600MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",12.81,"SDS Drill Bits","5902628100917"],["SDSM-14-280","14 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",8.4,"SDS Drill Bits","5902628100986"],["SDSM-14-340","14 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",9.45,"SDS Drill Bits","5902628100993"],["SDSM-14-600","14 X 600MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",13.86,"SDS Drill Bits","5902628100924"],["SDSM-16-1000","16 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",25.5,"SDS Drill Bits","5902656356263"],["SDSM-16-280","16 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",8.95,"SDS Drill Bits","5902628100665"],["SDSM-16-340","16 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",10.5,"SDS Drill Bits","5902628101006"],["SDSM-16-600","16 X 600MM SDS MAX 4 CUTTING EDGE DRILL BIT",15.5,"SDS Drill Bits","5902628100672"],["SDSM-18-1000","18 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",26.5,"SDS Drill Bits","5902628101259"],["SDSM-18-280","18 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",9.72,"SDS Drill Bits","5902628100689"],["SDSM-18-340","18 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",11.55,"SDS Drill Bits","5902628101129"],["SDSM-18-600","18 X 600MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",17.5,"SDS Drill Bits","5902628100696"],["SDSM-20-1000","20 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",28.5,"SDS Drill Bits","5902656356270"],["SDSM-20-280","20 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",11.03,"SDS Drill Bits","5902628100702"],["SDSM-20-340","20 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",12.6,"SDS Drill Bits","5902628101020"],["SDSM-20-600","20 X 600MM SDS MAX 4 CUTTING EDGE DRILL BIT",20.5,"SDS Drill Bits","5902628100719"],["SDSM-22-1000","22 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",28.5,"SDS Drill Bits","5902628101266"],["SDSM-22-280","22 X 280MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",12.6,"SDS Drill Bits","5902628200150"],["SDSM-22-340","22 X 340 SDS MAX 4 CUTTING EDGE DRILL BIT",13.65,"SDS Drill Bits","5902628101105"],["SDSM-22-600","22 X 600MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",22.5,"SDS Drill Bits","5902628100733"],["SDSM-24-1000","24 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",29.5,"SDS Drill Bits","5902628101273"],["SDSM-24-280","24 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",13.65,"SDS Drill Bits","5902628100740"],["SDSM-24-340","24 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",15.23,"SDS Drill Bits","5902628101150"],["SDSM-24-600","24 X 600MM SDS MAX 4 CUTTING EDGE DRILL BIT",23.5,"SDS Drill Bits","5902628100757"],["SDSM-25-1000","25 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",34.5,"SDS Drill Bits","5902628100931"],["SDSM-25-280","25 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",13.97,"SDS Drill Bits","5902628100764"],["SDSM-25-340","25 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",16.78,"SDS Drill Bits","5902628101037"],["SDSM-25-600","25 X 600MM SDS MAX 4 CUTTING EDGE DRILL BIT",24.5,"SDS Drill Bits","5902628100771"],["SDSM-28-1000","28 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",35.0,"SDS Drill Bits","5902628101334"],["SDSM-28-280","28 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",16.28,"SDS Drill Bits","5902628101044"],["SDSM-28-340","28 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",22.05,"SDS Drill Bits","5902628101242"],["SDSM-28-600","28 X 600MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",27.3,"SDS Drill Bits","5902628100948"],["SDSM-30-1000","30 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",40.0,"SDS Drill Bits","5902628101341"],["SDSM-30-280","30 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",21.0,"SDS Drill Bits","5902628101167"],["SDSM-30-340","30 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",24.68,"SDS Drill Bits","5902628101174"],["SDSM-30-600","30 X 600MM SDS MAX 4 CUTTING EDGE DRILL BIT",30.5,"SDS Drill Bits","5902628101181"],["SDSM-32-1000","32 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",60.0,"SDS Drill Bits","5902660321004"],["SDSM-32-280","32 X 280MM SDS MAX 4 CUTTING EDGE DRILL BIT",22.58,"SDS Drill Bits","5902628101051"],["SDSM-32-340","32 X 340MM SDS MAX 4 CUTTING EDGE DRILL BIT",26.25,"SDS Drill Bits","5902628101068"],["SDSM-32-600","32 X 600MM SDS MAX 4 CUTTING EDGE DRILL BIT",33.5,"SDS Drill Bits","5902628100788"],["SDSM-36-1000","36 X 1000MM SDS MAX 4 CUTTING EDGE DOUBLE SPIRAL BIT",61.0,"SDS Drill Bits","5902656356300"],["SDSM-40-1000","40 X 1000MM SDS MAX 4 CUTTING EDGE DRILL BIT",62.5,"SDS Drill Bits","5902656356102"],["SDSP-10-1000","10 X 1000MM SDS PLUS DRILL BIT",11.17,"SDS Drill Bits","5902628100580"],["SDSP-10-160","10 X 160MM SDS PLUS DRILL BIT",1.93,"SDS Drill Bits","5902628100139"],["SDSP-10-210","10 X 210MM SDS PLUS DRILL BIT",2.61,"SDS Drill Bits","5902628100146"],["SDSP-10-260","10 X 260MM SDS PLUS DRILL BIT",2.91,"SDS Drill Bits","5902628100795"],["SDSP-10-310","10 X 310MM SDS PLUS DRILL BIT",3.02,"SDS Drill Bits","5902628100870"],["SDSP-10-350","10 X 350MM SDS PLUS DRILL BIT",3.38,"SDS Drill Bits","5902628001207"],["SDSP-10-360","10 X 360MM SDS PLUS DRILL BIT",3.38,"SDS Drill Bits","no barcode"],["SDSP-10-600","10 X 600MM SDS PLUS DRILL BIT",7.37,"SDS Drill Bits","5902628100177"],["SDSP-10-800","10 X 800MM SDS PLUS DRILL BIT",8.34,"SDS Drill Bits","5902628100184"],["SDSP-12-1000","12 X 1000MM SDS PLUS DRILL BIT",14.48,"SDS Drill Bits","5902628210159"],["SDSP-12-160","12 X 160MM SDS PLUS DRILL BIT",2.3,"SDS Drill Bits","5902628100207"],["SDSP-12-210","12 X 210MM SDS PLUS DRILL BIT",2.93,"SDS Drill Bits","5902628100214"],["SDSP-12-260","12 X 260MM SDS PLUS DRILL BIT",3.93,"SDS Drill Bits","5902628100801"],["SDSP-12-310","12 X 310MM SDS PLUS DRILL BIT",5.1,"SDS Drill Bits","5902628100894"],["SDSP-12-360","12 X 350MM SDS PLUS DRILL BIT",6.03,"SDS Drill Bits","5902628001221"],["SDSP-12-460","12 X 460MM SDS PLUS DRILL BIT",7.29,"SDS Drill Bits","5902628100238"],["SDSP-12-600","12 X 600MM SDS PLUS DRILL BIT",10.51,"SDS Drill Bits","5902628100245"],["SDSP-12-800","12 X 800MM SDS PLUS DRILL BIT",12.05,"SDS Drill Bits","5902628000286"],["SDSP-13-160","13 X 160MM SDS PLUS DRILL BIT",2.56,"SDS Drill Bits","8011779211797"],["SDSP-13-210","13 X 210MM SDS PLUS DRILL BIT",3.17,"SDS Drill Bits","8011779270435"],["SDSP-13-310","13 X 310MM SDS PLUS DRILL BIT",5.37,"SDS Drill Bits","no barcode"],["SDSP-13-360","13 X 360MM SDS PLUS DRILL BIT",6.04,"SDS Drill Bits","5902628000217"],["SDSP-13-460","13 X 460MM SDS PLUS DRILL BIT",7.55,"SDS Drill Bits","no barcode"],["SDSP-14-1000","14 X 1000MM SDS PLUS DRILL BIT",16.91,"SDS Drill Bits","5902628100603"],["SDSP-14-160","14 X 160MM SDS PLUS DRILL BIT",2.75,"SDS Drill Bits","5902628001368"],["SDSP-14-210","14 X 210MM SDS PLUS DRILL BIT",3.07,"SDS Drill Bits","5902628100276"],["SDSP-14-260","14 X 260MM SDS PLUS DRILL BIT",4.35,"SDS Drill Bits","5902628100955"],["SDSP-14-310","14 X 310MM SDS PLUS DRILL BIT",5.55,"SDS Drill Bits","5902628101228"],["SDSP-14-350","14 X 350MM SDS PLUS DRILL BIT",6.04,"SDS Drill Bits","8011779270459"],["SDSP-14-360","14 X 360MM SDS PLUS DRILL BIT",6.16,"SDS Drill Bits","936014001101"],["SDSP-14-450","14 X 450MM SDS PLUS DRILL BIT",7.5,"SDS Drill Bits","5902628100290"],["SDSP-14-600","14 X 600MM SDS PLUS DRILL BIT",10.87,"SDS Drill Bits","5902628100306"],["SDSP-14-800","14 X 800MM SDS PLUS DRILL BIT",13.28,"SDS Drill Bits","5902628000088"],["SDSP-15-210","15 X 210MM SDS PLUS DRILL BIT",3.68,"SDS Drill Bits","5902628101297"],["SDSP-16-1000","16 X 1000MM SDS PLUS DRILL BIT",17.93,"SDS Drill Bits","5902628100610"],["SDSP-16-160","16 X 160MM SDS PLUS DRILL BIT",3.75,"SDS Drill Bits","5902628100320"],["SDSP-16-210","16 X 210MM SDS PLUS DRILL BIT",3.93,"SDS Drill Bits","5902628100337"],["SDSP-16-260","16 X 260MM SDS PLUS DRILL BIT",4.83,"SDS Drill Bits","5902628100825"],["SDSP-16-310","16 X 310MM SDS PLUS DRILL BIT",5.86,"SDS Drill Bits","5902628101198"],["SDSP-16-350","16 X 350MM SDS PLUS DRILL BIT",6.65,"SDS Drill Bits","5902628100344"],["SDSP-16-360","16 X 360MM SDS PLUS DRILL BIT",6.89,"SDS Drill Bits","no barcode"],["SDSP-16-450","16 X 450MM SDS PLUS DRILL BIT",8.1,"SDS Drill Bits","5902628100351"],["SDSP-16-600","16 X 600MM SDS PLUS DRILL BIT",11.14,"SDS Drill Bits","5902628100368"],["SDSP-16-800","16 X 800MM SDS PLUS DRILL BIT",14.49,"SDS Drill Bits","5902628000101"],["SDSP-18-1000","18 X 1000MM SDS PLUS DRILL BIT",20.53,"SDS Drill Bits","5902628100627"],["SDSP-18-210","18 X 210MM SDS PLUS DRILL BIT",5.55,"SDS Drill Bits","5902628100382"],["SDSP-18-260","18 X 260MM SDS PLUS DRILL BIT",6.34,"SDS Drill Bits","5902628100900"],["SDSP-18-350","18 X 350MM SDS PLUS DRILL BIT",7.85,"SDS Drill Bits","5902628100399"],["SDSP-18-450","18 X 450MM SDS PLUS DRILL BIT",9.18,"SDS Drill Bits","5902628100405"],["SDSP-18-600","18 X 600MM SDS PLUS DRILL BIT",13.28,"SDS Drill Bits","5902628100412"],["SDSP-20-1000","20 X 1000MM SDS PLUS DRILL BIT",23.55,"SDS Drill Bits","5902628100634"],["SDSP-20-160","20 X 160MM SDS PLUS DRILL BIT",5.74,"SDS Drill Bits","5902628101143"],["SDSP-20-260","20 X 260MM SDS PLUS DRILL BIT",6.95,"SDS Drill Bits","5902628100832"],["SDSP-20-310","20 X 310MM SDS PLUS DRILL BIT",7.55,"SDS Drill Bits","5902628101099"],["SDSP-20-350","20 X 350MM SDS PLUS DRILL BIT",9.06,"SDS Drill Bits","no barcode"],["SDSP-20-360","20 X 360MM SDS PLUS DRILL BIT",8.63,"SDS Drill Bits","5902628100443"],["SDSP-20-450","20 X 450MM SDS PLUS DRILL BIT",13.28,"SDS Drill Bits","5902628100450"],["SDSP-20-600","20 X 600MM SDS PLUS DRILL BIT",15.1,"SDS Drill Bits","5902628100467"],["SDSP-22-260","22 X 260MM SDS PLUS DRILL BIT",8.16,"SDS Drill Bits","5902628001382"],["SDSP-22-350","22 X 350MM SDS PLUS DRILL BIT",10.62,"SDS Drill Bits","5902628100498"],["SDSP-22-450","22 X 450MM SDS PLUS DRILL BIT",14.34,"SDS Drill Bits","5902628100504"],["SDSP-22-460","22 X 460MM SDS PLUS DRILL BIT",14.34,"SDS Drill Bits","no barcode"],["SDSP-24-260","24 X 260MM SDS PLUS DRILL BIT",8.45,"SDS Drill Bits","5902628100818"],["SDSP-24-450","24 X 450MM SDS PLUS DRILL BIT",14.73,"SDS Drill Bits","8011779069237"],["SDSP-25-1000","25 X 1000MM SDS PLUS DRILL BIT",26.45,"SDS Drill Bits","5902628000156"],["SDSP-25-260","25 X 260MM SDS PLUS DRILL BIT",8.69,"SDS Drill Bits","5902628100887"],["SDSP-25-450","25 X 450MM SDS PLUS DRILL BIT",16.03,"SDS Drill Bits","5902628100559"],["SDSP-25-600","25 X 600MM SDS PLUS DRILL BIT",20.53,"SDS Drill Bits","5902628100566"],["SDSP-25-800","25 X 800MM SDS PLUS DRILL BIT",23.0,"SDS Drill Bits","5902628100573"],["SDSP-28-1000","28 X 1000MM SDS PLUS DRILL BIT",34.5,"SDS Drill Bits","5902660281001"],["SDSP-28-600","28 X 600MM SDS PLUS DRILL BIT",23.0,"SDS Drill Bits","5902660286006"],["SDSP-30-600","30 X 600MM SDS PLUS DRILL BIT",24.0,"SDS Drill Bits","5902656356256"],["SDSP-32-1000","32 X 1000MM SDS PLUS DRILL BIT",39.1,"SDS Drill Bits","5902660321004"],["SDSP-32-600","32 X 600MM SDS PLUS DRILL BIT",25.3,"SDS Drill Bits","5902660326009"],["SDSP-38-1000","38 X 1000MM SDS PLUS DRILL BIT",55.2,"SDS Drill Bits","5902660381008"],["SDSP-38-600","38 X 600MM SDS PLUS DRILL BIT",35.65,"SDS Drill Bits","5902660386003"],["SDSP-4-160","4 X 160MM SDS PLUS DRILL BIT",1.26,"SDS Drill Bits","5902628101310"],["SDSP-5.5-110","5.5 X 110MM SDS PLUS DRILL BIT",1.21,"SDS Drill Bits","5902628100009"],["SDSP-5.5-160","5.5 X 160MM SDS PLUS DRILL BIT",1.35,"SDS Drill Bits","5902628100016"],["SDSP-5-160","5 X 160MM SDS PLUS DRILL BIT",1.34,"SDS Drill Bits","5902628101075"],["SDSP-6PCE","6 PIECE SDS PLUS DRILL BIT SET",5.3,"SDS Drill Bits","no barcode"],["SDSP-6.5-160","6.5 X 160MM SDS PLUS DRILL BIT",1.58,"SDS Drill Bits","no barcode"],["SDSP-6.5-210","6.5 X 210MM SDS PLUS DRILL BIT",2.24,"SDS Drill Bits","5902628101136"],["SDSP-6.5-260","6.5 X 260MM SDS PLUS DRILL BIT",2.42,"SDS Drill Bits","5902628101211"],["SDSP-6.5-360","6.5 X 350MM SDS PLUS DRILL BIT",3.44,"SDS Drill Bits","5902628001146"],["SDSP-6-160","6 X 160MM SDS PLUS DRILL BIT",1.51,"SDS Drill Bits","5902628100030"],["SDSP-6-210","6 X 210MM SDS PLUS DRILL BIT",2.06,"SDS Drill Bits","5902628100047"],["SDSP-6-260","6 X 260MM SDS PLUS DRILL BIT",2.3,"SDS Drill Bits","5902628101280"],["SDSP-6-350","6 X 350MM SDS PLUS DRILL BIT",3.02,"SDS Drill Bits","5902628101204"],["SDSP-7-160","7 X 160MM SDS PLUS DRILL BIT",1.58,"SDS Drill Bits","5902628100856"],["SDSP-7-210","7 X 210MM SDS PLUS DRILL BIT",2.17,"SDS Drill Bits","5902628100863"],["SDSP-8-160","8 X 160MM SDS PLUS DRILL BIT",1.6,"SDS Drill Bits","5902628100085"],["SDSP-8-210","8 X 210MM SDS PLUS DRILL BIT",2.3,"SDS Drill Bits","5902628100092"],["SDSP-8-260","8 X 260MM SDS PLUS DRILL BIT",2.54,"SDS Drill Bits","5902628100849"],["SDSP-8-360","8 X 350MM SDS PLUS DRILL BIT",3.27,"SDS Drill Bits","5902628100108"],["SDSP-SHNK-350","350MM SDS PLUS SHANK",9.0,"SDS Drill Bits","5902628210081"],["SDSP-SHNK-450","450MM SDS PLUS SHANK",10.0,"SDS Drill Bits","5902628210098"],["SDSM-SHNK-500","500MM SDS MAX SHANK",11.0,"SDS Drill Bits","5902628210203"],["SDSP-SHNK-500","500MM SDS PLUS SHANK",11.0,"SDS Drill Bits","8902628351132"],["BGR-RED-SET","BENCH GRINDER STONE CENTRE REDUCER SET",1.0,"Spare Parts","no barcode"],["SPAREPARTS","STAYER MITRE SAW SPRINGS, BRACKETS, ARMATURES",0.0,"Spare Parts","no barcode"],["SDB-3PC-HU","3 PIECE TITANIUM DOUBLE SPIRAL FLUTE STEP DRILL HANG UP DISPLAY",26.25,"Step Drills","5032759028733"],["SDB-3PC","3 PIECE TITANIUM DOUBLE SPIRAL FLUTE STEP DRILL 4-12, 4-20, 4-30",26.25,"Step Drills","6438284124831"],["HSS-SD-4-20","4 - 20MM STEP DRILL SPIRAL FLUTE HSS M2",9.24,"Step Drills","6987070704202"],["HSS-SD-4-30","4 - 30MM STEP DRILL SPIRAL FLUTE HSS M2",22.58,"Step Drills","6987070704301"],["HSS-SD-6-30","6 - 30MM STEP DRILL SPIRAL FLUTE HSS M2",21.74,"Step Drills","6987070706381"],["HSS-SD-6-38","6 - 38MM STEP DRILL SPIRAL FLUTE HSS M2",26.25,"Step Drills","no barcode"],["HSS-SD-6-50","6 - 50MM STEP DRILL SPIRAL FLUTE HSS 5% COBALT M2",36.0,"Step Drills","8011779069206"],["TCT-115-3T","115 X 22.23MM - 3T TCT SAW BLADE FOR CEMENT BOARD & WOOD",7.2,"TCT Saw Blades","4814282001275"],["TCT-125-3T","125 X 22.23MM - 3T TCT SAW BLADE FOR CEMENT BOARD & WOOD",8.0,"TCT Saw Blades","4814282001275"],["TCT-136-10-24T","136 X 10 X 24T TCT SAW BLABE",8.45,"TCT Saw Blades","313610241101"],["TCT-136-10-40T","136 X 10 X 40T TCT SAW BLADE",9.99,"TCT Saw Blades","313610401205"],["TCT-140-10-24T","140 X 10 X 24T TCT SAW BLADE",8.45,"TCT Saw Blades","314010241101"],["TCT-150-10-30T","150 X 10 X 30T TCT SAW BLADE",8.99,"TCT Saw Blades","out of stock"],["TCT-150-30-24T","150 X 30 X 24T TCT SAW BLADE",8.99,"TCT Saw Blades","out of stock"],["TCT-150-30-30T","150 X 30 X 30T TCT SAW BLADE",9.0,"TCT Saw Blades","313610401205"],["TCT-160-16-30T","160 X 16 X 30T TCT SAW BLADE",9.25,"TCT Saw Blades","316016301209"],["TCT-160-20-24T","160 X 20 X 24T TCT SAW BLADE",8.99,"TCT Saw Blades","316020241201"],["TCT-160-20-40T","160 X 20 X 40T TCT SAW BLADE",9.5,"TCT Saw Blades","326020341101"],["TCT-160-30-30T","160 X 30 X 30T TCT SAW BLADE",9.2,"TCT Saw Blades","316030301100"],["TCT-165-10-24T","165 X 10 X 24T TCT SAW BLADE",8.99,"TCT Saw Blades","316510241100"],["TCT-165-10-36T","165 X 10 X 36T TCT SAW BLADE",9.5,"TCT Saw Blades","316510361105"],["TCT-165-10-40T","165 X 10 X 40T TCT SAW BLADE",10.0,"TCT Saw Blades","316510401207"],["TCT-165-16-24T","165 X 16 X 24T TCT SAW BLADE",8.99,"TCT Saw Blades","5052003886155"],["TCT-165-16-36T","165 X 16 X 36T TCT SAW BLADE",9.5,"TCT Saw Blades","32602351102"],["TCT-165-20-24T","165 X 20 X 24T TCT SAW BLADE",8.99,"TCT Saw Blades","3576602391435"],["TCT-165-20-36T","165 X 20 X 36T TCT SAW BLADE",9.5,"TCT Saw Blades","3260235511024"],["TCT-165-20-48T","165 X 20 X 48T TCT SAW BLADE",10.5,"TCT Saw Blades","5012594443526"],["TCT-165-30-30T","165 X 30 X 30T TCT SAW BLADE",9.25,"TCT Saw Blades","316530301105"],["TCT-170-30-30T","170 X 30 X 30T TCT SAW BLADE",9.34,"TCT Saw Blades","out of stock"],["TCT-170-30-40T","170 X 30 X 40T TCT SAW BLADE",9.49,"TCT Saw Blades","no barcode"],["TCT-180-30-18T","180 X 30 X 18T TCT SAW BLADE",9.2,"TCT Saw Blades","318030181102"],["TCT-180-30-30T","180 X 30 X 30T TCT SAW BLADE",9.8,"TCT Saw Blades","318030301104"],["TCT-180-30-40T","180 X 30 X 40T TCT SAW BLADE",10.5,"TCT Saw Blades","318030401101"],["TCT-180-30-48T","180 X 30 X 48T TCT SAW BLADE",12.0,"TCT Saw Blades","318030481103"],["TCT-184-16-18T","184 X 16 X 18T TCT SAW BLADE",9.35,"TCT Saw Blades","318416181108"],["TCT-184-16-36T","184 X 16 X 36T TCT SAW BLADE",11.0,"TCT Saw Blades","318416361104"],["TCT-184-16-40T","184 X 16 X 40T TCT SAW BLADE",11.5,"TCT Saw Blades","318416401107"],["TCT-184-16-48T","184 X 16 X 48T TCT SAW BLADE",12.0,"TCT Saw Blades","318416481109"],["TCT-184-30-18T","184 X 30 X 18T TCT SAW BLADE",9.35,"TCT Saw Blades","5012594430472"],["TCT-184-30-24T","184 X 30 X 24T TCT SAW BLADE",9.8,"TCT Saw Blades","318430241109"],["TCT-184-30-36T","184 X 30 X 36T TCT SAW BLADE",11.0,"TCT Saw Blades","318430401108"],["TCT-184-30-40T","184 X 30 X 40T TCT SAW BLADE",11.5,"TCT Saw Blades","318430401107"],["TCT-184-30-48T","184 X 30 X 48T TCT SAW BLADE",12.0,"TCT Saw Blades","318420401107"],["TCT-190-16-18T","190 X 16 X 18T TCT SAW BLADE",9.4,"TCT Saw Blades","319016181109"],["TCT-190-16-24T","190 X 16 X 24T TCT SAW BLADE",10.0,"TCT Saw Blades","319016241100"],["TCT-190-16-30T","190 X 16 X 30T TCT SAW BLADE",11.0,"TCT Saw Blades","out of stock"],["TCT-190-16-36T","190 X 16 X 36T TCT SAW BLADE",11.25,"TCT Saw Blades","319016361105"],["TCT-190-16-40T","190 X 16 X 40T TCT SAW BLADE",11.5,"TCT Saw Blades","319016401108"],["TCT-190-16-48T","190 X 16 X 48T TCT SAW BLADE",12.0,"TCT Saw Blades","319016481100"],["TCT-190-30-18T","190 X 30 X 18T TCT SAW BLADE",9.4,"TCT Saw Blades","319030181109"],["TCT-190-30-30T","190 X 30 X 30T TCT SAW BLADE",11.0,"TCT Saw Blades","319030301101"],["TCT-190-30-40T","190 X 30 X 40T TCT SAW BLADE",11.5,"TCT Saw Blades","319030401108"],["TCT-190-30-48T","190 X 30 X 48T TCT SAW BLADE",12.0,"TCT Saw Blades","319030171209"],["TCT-205-30-24T","205 X 30 X 24T TCT SAW BLADE",15.0,"TCT Saw Blades","320530603411"],["TCT-205-30-40T","205 X 30 X 40T TCT SAW BLADE",21.5,"TCT Saw Blades","320530401109"],["TCT-205-30-60T","205 X 30 X 60T TCT SAW BLADE",22.85,"TCT Saw Blades","320530603411"],["TCT-205-30-60T-NR","205 X 30 X 60T TCT SAW BLADE NEGATIVE RAKE",30.46,"TCT Saw Blades","320530603411"],["TCT-210-30-24T","210 X 30 X 24T TCT SAW BLADE",16.0,"TCT Saw Blades","320520401102"],["TCT-210-30-40T","210 X 30 X 40T TCT SAW BLADE",21.75,"TCT Saw Blades","321030401101"],["TCT-210-30-60T","210 X 30 X 60T TCT SAW BLADE",22.85,"TCT Saw Blades","321030603413"],["TCT-210-30-60T-NR","210 X 30 X 60T TCT SAW BLADE NEGATIVE RAKE",30.46,"TCT Saw Blades","321030603413"],["TCT-215-30-24T","215 X 30 X 24T TCT SAW BLADE",17.0,"TCT Saw Blades","321530241108"],["TCT-215-30-48T","215 X 30 X 48T TCT SAW BLADE",21.66,"TCT Saw Blades","321530481108"],["TCT-215-30-60T-AL","215 X 30 X 60T TCT SAW BLADE ALUMINIUM CUTTING",30.46,"TCT Saw Blades","no barcode"],["TCT-215-30-60T-NR","215 X 30 X 60T TCT SAW BLADE NEGATIVE RAKE",30.46,"TCT Saw Blades","321530603418"],["TCT-215-30-80T","215 X 30 X 80T TCT SAW BLADE",25.49,"TCT Saw Blades","321530801104"],["TCT-230-30-24T","230 X 30 X 24T TCT SAW BLADE",19.04,"TCT Saw Blades","323030241107"],["TCT-230-30-36T","230 X 30 X 36T TCT SAW BLADE",23.48,"TCT Saw Blades","323030361102"],["TCT-230-30-48T","230 X 30 X 48T TCT SAW BLADE",27.29,"TCT Saw Blades","323030481107"],["TCT-230-30-64T-AL","230 X 30 X 64T TCT SAW BLADE ALUMINIUM CUTTING",35.0,"TCT Saw Blades","323030640443"],["TCT-230-30-64T-NR","230 X 30 X 64T TCT SAW BLADE NEGATIVE RAKE",35.0,"TCT Saw Blades","323030643413"],["TCT-250-30-80T-NR","250 X 30 X 80T TCT SAW BLADE NEGATIVE RAKE",38.71,"TCT Saw Blades","325030803415"],["TCT-254-30-24T","254 X 30 X 24T TCT SAW BLADE",23.0,"TCT Saw Blades","325440242107"],["TCT-254-30-24T-CH","254 X 30 X 24T TCT SAW BLADE",16.0,"TCT Saw Blades","325440242107"],["TCT-254-30-42T","254 X 30 X 42T TCT SAW BLADE",27.92,"TCT Saw Blades","325430241107"],["TCT-254-30-42T-CH","254 X 30 X 42T TCT SAW BLADE",18.0,"TCT Saw Blades","325430241107"],["TCT-254-30-60T","254 X 30 X 60T TCT SAW BLADE",35.54,"TCT Saw Blades","325430601109"],["TCT-254-30-60T-CH","254 X 30 X 60T TCT SAW BLADE",19.0,"TCT Saw Blades","335430601108"],["TCT-254-30-80T-AL","254 X 30 X 80T TCT SAW BLADE ALUMINIUM CUTTING",45.62,"TCT Saw Blades","325430804401"],["TCT-254-30-80T","254 X 30 X 80T TCT SAW BLADE",35.0,"TCT Saw Blades","325430803410"],["TCT-254-30-80T-NR","254 X 30 X 80T TCT SAW BLADE NEGATIVE RAKE",38.71,"TCT Saw Blades","325430803410"],["TCT-260-30-60T","260 X 30 X 60T TCT SAW BLADE",35.54,"TCT Saw Blades","326030601100"],["TCT-305-30-100T-AL","305 X 30 X 100T TCT SAW BLADE ALUMINIUM CUTTING",48.23,"TCT Saw Blades","330530100445"],["TCT-305-30-28T","305 X 30 X 28T TCT SAW BLADE",25.49,"TCT Saw Blades","330630281105"],["TCT-305-30-28T-CH","305 X 30 X 28T TCT SAW BLADE",18.5,"TCT Saw Blades","330530281106"],["TCT-305-30-48T","305 X 30 X 48T TCT SAW BLADE",32.47,"TCT Saw Blades","330530481100"],["TCT-305-30-48T-CH","305 X 30 X 48T TCT SAW BLADE",21.0,"TCT Saw Blades","330530481100"],["TCT-305-30-72T-NR","305 X 30 X 72T TCT SAW BLADE NEGATIVE RAKE",30.0,"TCT Saw Blades","330530721107"],["TCT-305-30-72T","305 X 30 X 72T TCT SAW BLADE",40.62,"TCT Saw Blades","330530721107"],["TCT-305-30-96T","305 X 30 X 96T TCT SAW BLADE",40.0,"TCT Saw Blades","330530963415"],["TCT-305-30-96T-NR","305 X 30 X 96T TCT SAW BLADE NEGATIVE RAKE",45.69,"TCT Saw Blades","330530963415"],["TCT-315-30-48T","315 X 30 X 48T TCT SAW BLADE",32.97,"TCT Saw Blades","331530481110"],["TCT-355-30-60T","355 X 30 X 60T TCT SAW BLADE",30.0,"TCT Saw Blades","230430481104"],["TS-12-100-FT","12 X 100MM FINE THREAD 5 POINT TH. METAL SDS SC. W/WASHER 100",10.0,"Tek Screws","5161619412105"],["TS-12-25-FT","12 X 25MM FINE THREAD 4 POINT THICK METAL W/WASHER (100)",3.9,"Tek Screws","5161619412259"],["TS-12-38-FT","12 X 38MM FINE THREAD 5 POINT THICK METAL W/WASHER (100)",5.0,"Tek Screws","5161619412389"],["TS-12-51-FT","12 X 51MM FINE THREAD 5 POINT THICK METAL W/WASHER (100)",6.0,"Tek Screws","5161619412518"],["TS-12-85-FT","12 X 85MM FINE THREAD T/METAL 5 POINT SDS SCREWS W/WASHER 100",9.0,"Tek Screws","5161619412853"],["TS-10-16-LM","10 X 16MM LIGHT METAL TECH SCREW (100)",1.27,"Tek Screws","5161941910164"],["TS-10-25-LM","10 X 25MM LIGHT METAL TECH SCREW W/WASHER (100)",3.17,"Tek Screws","3576600239125"],["TS-12-25-LM","12 X 25MM LIGHT METAL TECH SCREW (100)",2.03,"Tek Screws","5161941912250"],["TS-12-25-LM-W","12 X 25MM LIGHT METAL TECH SCREW W/WASHER (100)",3.25,"Tek Screws","5161694120250"],["TS-14-105-LM","14 X 105MM LIGHT METAL TECH SCREW W/WASHER (100)",10.0,"Tek Screws","5161619414109"],["TS-14-150-LM","14 X 150MM LIGHT METAL TECH SCREW W/WASHER (100)",15.0,"Tek Screws","5161619141500"],["TS-14-200-LM","14 X 200MM LIGHT METAL TECH SCREW W/WASHER (100)",16.0,"Tek Screws","5161619141257"],["TS-14-22-LM","14 X 22MM LIGHT METAL TECH SCREW W/WASHER (100)",3.81,"Tek Screws","5161619414222"],["TS-14-25-LM","14 X 25MM LIGHT METAL TECH SCREW W/WASHER (100)",3.95,"Tek Screws","5161619414253"],["TS-14-43-LM","14 X 43MM LIGHT METAL TECH SCREW W/WASHER (100)",4.9,"Tek Screws","305766000239143"],["TS-14-50-LM","14 X 50MM LIGHT METAL TECH SCREW W/WASHER (100)",5.2,"Tek Screws","5161619414505"],["TS-14-57-LM","14 X 57MM LIGHT METAL TECH SCREW W/WASHER (100)",5.55,"Tek Screws","5161619414574"],["TS-14-80-LM","14 X 80MM LIGHT METAL TECH SCREW W/WASHER (100)",7.0,"Tek Screws","5161619414802"],["TS-14-80-RFG","14 X 80MM ROOFING TECH SCREW W/WASHER (100)",8.3,"Tek Screws","5161617014806"],["TS-14-22-STC","14 X 22MM STITCHER TECH SCREW W/WASHER (100)",3.81,"Tek Screws","5161619414222"],["MTD-1/4-45","1/4 X 45MM MAGNETIC TECH DRIVER",2.54,"Tek Screws","8421814100458"],["MTD-1/4-65","1/4 X 65MM MAGNETIC TECH DRIVER",3.04,"Tek Screws","8421814100656"],["MTD-10-65","10 X 65MM MAGNETIC TECH DRIVER",3.17,"Tek Screws","6988626798089"],["MTD-8-42","8 X 42MM MAGNETIC TECH DRIVER",2.58,"Tek Screws","6988626798072"],["MTD-8-65","8 X 65MM MAGNETIC TECH DRIVER",3.04,"Tek Screws","6988626798089"],["TS-12-40-W-FT","12 X 40MM PHILIPS FLAT HEAD F/ THREAD 5 POINT SDS SC. W/WINGS",3.5,"Tek Screws","5161617012406"],["TS-12-50-W-FT","12 X 50MM PHILIPS FLAT HEAD F/THREAD SDS SC. W/WINGS",4.0,"Tek Screws","5161617012505"],["TS-12-60-W-FT","12 X 60MM PHILIPS FLAT HEAD F/THREAD SDS SC. W/WINGS",4.5,"Tek Screws","5161617012604"],["TS-4.8-25-W","4.8 X 25MM PHILIPS FLAT HEAD SDS SCREWS WITH WINGS (100)",2.0,"Tek Screws","5161617041481"],["TS-4.8-38-W","4.8 X 38MM PHILIPS FLAT HEAD SDS SCREWS WITH WINGS (100)",2.5,"Tek Screws","5161617015502"],["TS-5.5-22","5.5 X 22MM PHILIPS FLAT HEAD SDS SCREWS WITHOUT WINGS (100)",2.0,"Tek Screws","5161618055228"],["TS-5.5-25","5.5 X 25MM PHILIPS FLAT HEAD SDS SCREWS WITHOUT WINGS (100)",2.4,"Tek Screws","5161618055259"],["TS-5.5-30","5.5 X 30MM PHILIPS FLAT HEAD SDS SCREWS WITHOUT WINGS (100)",2.5,"Tek Screws","5161618055303"],["TS-5.5-35-W","5.5 X 35MM PHILIPS FLAT HEAD SDS SCREWS WITH WINGS (100)",3.0,"Tek Screws","5161617055359"],["TS-5.5-50-W","5.5 X 50MM PHILIPS FLAT HEAD SDS SCREWS WITH WINGS (100)",4.0,"Tek Screws","516161 7055502"],["TS-14-100-LS","14 X 100MM LIGHT SHEET TO WOOD TECH SCREW W/WASHER (100)",11.0,"Tek Screws","5161617141007"],["TS-14-125-LS","14 X 125MM LIGHT SHEET TO WOOD TECH SCREW W/WASHER (100)",15.26,"Tek Screws","5161617141250"],["TS-14-150-LS","14 X 150MM LIGHT SHEET TO WOOD TECH SCREW W/WASHER (100)",15.0,"Tek Screws","5161619141251"],["TS-14-200-LS","14 X 200 LIGHT SHEET TO WOOD TECH SCREW W/WASHER (100)",16.0,"Tek Screws","5161619141350"],["TS-14-32-LS","14 X 32MM LIGHT SHEET TO WOOD TECH SCREW W/WASHER(100)",3.9,"Tek Screws","5161617014325"],["TS-14-45-LS","14 X 45MM LIGHT SHEET TO WOOD TECH SCREW W/WASHER (100)",4.0,"Tek Screws","3576600239114"],["TS-14-50-LS","14 X 50MM LIGHT SHEET TO WOOD TECH SCREW W/WASHER (100)",5.0,"Tek Screws","5161617014098"],["TS-14-65-LS","14 X 65MM LIGHT SHEET TO WOOD TECH SCREW W/WASHER (100)",6.0,"Tek Screws","5161617014653"],["TS-14-85-LS","14 X 85MM LIGHT SHEET TO WOOD TECH SCREW W/WASHER (100)",9.95,"Tek Screws","5161617014851"],["DTB-10","10MM M14 DIAMOND TILE BIT",6.5,"Tile Bits","8004601008641"],["DTB-125","125MM M14 DIAMOND TILE BIT",67.5,"Tile Bits","out of stock"],["DTB-14","14MM M14 DIAMOND TILE BIT",7.0,"Tile Bits","8004601010125"],["DTB-16","16MM M14 DIAMOND TILE BIT",8.0,"Tile Bits","8004601016028"],["DTB-20","20MM M14 DIAMOND TILE BIT",9.0,"Tile Bits","8004601009839"],["DTB-22","22MM M14 DIAMOND TILE BIT",10.0,"Tile Bits","8004601011030"],["DTB-32","32MM M14 DIAMOND TILE BIT",11.0,"Tile Bits","8004601011047"],["DTB-35","35MM M14 DIAMOND TILE BIT",12.5,"Tile Bits","8004601007255"],["DTB-38","38MM M14 DIAMOND TILE BIT",14.0,"Tile Bits","3255660019788"],["DTB-45","45MM M14 DIAMOND TILE BIT",16.0,"Tile Bits","8006010030046"],["DTB-50","50MM M14 DIAMOND TILE BIT",17.5,"Tile Bits","8004601010361"],["DTB-55","55MM M14 DIAMOND TILE BIT",20.5,"Tile Bits","8004601011276"],["DTB-5","5MM M14 DIAMOND TILE BIT",5.0,"Tile Bits","8004601007347"],["DTB-6","6MM M14 DIAMOND TILE BIT",5.75,"Tile Bits","8004601011016"],["DTB-8","8MM M14 DIAMOND TILE BIT",6.0,"Tile Bits","8004601008382"],["OTB-10","10MM TCT ORANGE TILE/METAL/WOOD BIT",4.05,"Tile Bits","4707057861047"],["OTB-6","6MM TCT ORANGE TILE/METAL/WOOD BIT",1.8,"Tile Bits","4707057860644"],["OTB-8","8MM TCT ORANGE TILE/METAL/WOOD BIT",3.0,"Tile Bits","4707057860644"],["EPT-JEP-IMP-WR","13MM JEPSON IMPACT WRENCH",177.69,"Electrical Tools","27168620406"],["EPT-JEP-REC-SW","JEPSON INDUSTRIAL RECIPROCATING SAW",150.0,"Electrical Tools","no barcode"],["EPT-PFT-BGR-250W","MD3215S 150MM 250W BENCH GRINDER 220V",35.5,"Electrical Tools","no barcode"],["EPT-PFT-BGR-300W","MD3220 200MM 300W BENCH GRINDER 220V",43.0,"Electrical Tools","no barcode"],["EPT-PFT-PDL-MXR","POFT 1600W ELECTRIC PADDLE MIXER INC. PADDLE",160.0,"Electrical Tools","5004601005575"],["EPT-PFT-PLSH","POFT POLISHER 1600W DIGITAL SPEED SWITCH",100.0,"Electrical Tools","no barcode"],["BDV-4","4\" BENCH DRILL VICE",18.95,"Vices","no barcode"],["BDV-5","5\" BENCH DRILL LEAD IN VICE",35.0,"Vices","no barcode"],["BDV-6","6\" BENCH DRILL VICE",24.22,"Vices","no barcode"],["VSJS-4","100MM SOFT JAW SET",5.7,"Vices","no barcode"],["VSJS-5","125MM SOFT JAW SET",6.25,"Vices","no barcode"],["VSJS-6","SPARE SOFT JAWS FOR 6\" VICE",7.5,"Vices","no barcode"],["VSJS-8","SPARE SOFT JAWS FOR 8\" VICE",8.0,"Vices","no barcode"],["SVFB-4-HD","4\" STEEL VICE FIXED BASE HEAVY DUTY",27.0,"Vices","no barcode"],["SVFB-5-HD","5\" STEEL VICE FIXED BASE HEAVY DUTY",45.0,"Vices","no barcode"],["SVFB-6-EHD","6\" STEEL VICE FIXED BASE EXTRA HEAVY DUTY",135.0,"Vices","no barcode"],["SVFB-6-HD","6\" STEEL VICE FIXED BASE HEAVY DUTY",81.0,"Vices","no barcode"],["SVFB-6-PJ","6\" STEEL VICE FIXED BASE WITH PIPE JAWS",96.0,"Vices","no barcode"],["SVFB-8","8\" STEEL VICE FIXED BASE",120.0,"Vices","no barcode"],["WLD-RODS","CARTON WELDING RODS",46.5,"Welding","8682600064228"],["BP-115-M14-V","115MM M14X2 VELCRO BACKING PAD",3.0,"Abrasives","4870289500487"],["AK-12PC-BE-L","12PC LONG BALL END ALLEN KEY SET",8.5,"Allen Keys","5394616458559"],["CS-50-RBS","50MM COUNTERSINK ROTA BROACH CUTTER SHANK",39.7,"Countersinks","9319510013785"],["DB-115-HPT-B","115 X 22.23MM K-TYPE BLUE HOT PRESSED TURBO BLADE",11.57,"Diamond Blades","5397830346589"],["SDB-115-MET","115 X 22.23MM SEGMENTED DIAMOND METAL CUTTING BLADE",11.5,"Diamond Blades","5397830594157"],["DB-200-HPT-S","115 X 22.23MM SEGMENTED HOT PRESSED TURBO BLADE",10.16,"Diamond Blades","5397830419634"],["DB-115-WN","115 X 22.23MM DIAMOND WOOD & NAIL CUTTING BLADE",8.3,"Diamond Blades","5397830593112"],["DCB-2-38","2-38MM M14 DIAMOND CORE DRILL BIT",20.0,"Tile Bits","5397830572384"],["DCB-3-75","3-75MM M14 DIAMOND CORE DRILL BIT",35.5,"Tile Bits","5397830573756"],["PLG-32A-415V-ST-5P","32AMP 220-415V EASY TWIST 5 PIN PLUG SCREW TYPE",6.0,"Electrical","5397830867428"],["SCT-32A-110V-ST","32AMP 110V CONNECTOR SOCKET SCREW TYPE",5.5,"Electrical","3255660001571"],["BGSB-50-686","50 X 686MM BENCH GRINDER SANDING BELT",2.5,"Electrical Tools","no barcode"],["HTPW-M4-M12","M4-M12 TAP WRENCH",6.0,"Hand Taps","no barcode"],["SCKT-10PC","10PC SOCKET SET",11.0,"Hand Tools","5393484664642"],["WRNC-2PC-UNV","2 PIECE UNIVERSAL WRENCH SET",5.5,"Hand Tools","5392814239086"],["WRNC-8N1","8 IN 1 WRENCH SET",7.0,"Hand Tools","5394072604620"],["PDL-DRL-125","125 X 490MM DRILL PADDLE",16.0,"Hand Tools","no barcode"],["PIPWR-10","10\" PIPE WRENCH",7.5,"Hand Tools","5393607132126"],["PIPWR-12","12\" PIPE WRENCH",9.5,"Hand Tools","5397835203030"],["PIPWR-14","14\" PIPE WRENCH",11.0,"Hand Tools","5398913624303"],["PIPWR-18","18\" PIPE WRENCH",16.5,"Hand Tools","5393645824618"],["PIPWR-24","24\" PIPE WRENCH",25.0,"Hand Tools","5395707934365"],["SCRDRV","SCREWDRIVER",1.0,"Hand Tools","no barcode"],["RBC-TCT-28-35","28MM X 35MM TCT ROTA BROACH CUTTER",25.0,"Rota Broach Cutters","9319510010777"],["SDSP-10-450","10 X 450MM SDS PLUS DRILL BIT",4.73,"SDS Drill Bits","5902628100160"],["SDSP-28-310","28 X 310MM SDS PLUS DRILL BIT",13.0,"SDS Drill Bits","5902656356317"],["SDSP-30-310","30 X 310MM SDS PLUS DRILL BIT",14.1,"SDS Drill Bits","5902656356331"],["SDSP-32-310","32 X 310MM SDS PLUS DRILL BIT",16.0,"SDS Drill Bits","5902656356348"],["SDSP-36-310","36 X 310MM SDS PLUS DRILL BIT",23.0,"SDS Drill Bits","5902656356362"],["SDSP-38-310","38 X 310MM SDS PLUS DRILL BIT",26.0,"SDS Drill Bits","5902656356379"],["SDSP-6.5-310","6.5 X 310MM SDS PLUS DRILL BIT",3.05,"SDS Drill Bits","5902628101365"],["SDSP-6-450","6 X 450MM SDS PLUS DRILL BIT",3.68,"SDS Drill Bits","5902628101358"],["SDSP-8-450","8 X 450MM SDS PLUS DRILL BIT",4.2,"SDS Drill Bits","5902628100115"],["DTB-100","100MM M14 DIAMOND TILE BIT",39.5,"Tile Bits","5397830561005"],["DTB-115","115MM M14 DIAMOND TILE BIT",62.5,"Tile Bits","5397830561159"],["DTB-12","12MM M14 DIAMOND TILE BIT",6.9,"Tile Bits","5397830564129"],["DTB-150","150MM M14 DIAMOND TILE BIT",80.0,"Tile Bits","5397830564150"],["DTB-25","25MM M14 DIAMOND TILE BIT",10.75,"Tile Bits","5397830562170"],["DTB-40","40MM M14 DIAMOND TILE BIT",15.75,"Tile Bits","5397830564396"],["DTB-80","80MM M14 DIAMOND TILE BIT",30.0,"Tile Bits","5397830564808"],["DTB-90","90MM M14 DIAMOND TILE BIT",36.0,"Tile Bits","5397830564907"],["DTB-18","18MM M14 DIAMOND TILE BIT",8.75,"Tile Bits",""],["DTB-65","65MM M14 DIAMOND TILE BIT",22.5,"Tile Bits",""],["HTPW-M12-M33","M12-M33 HAND TAP WRENCH",9.0,"Hand Taps",""],["SDSPSC-6-210","6 X 210MM SDS PLUS SOLID CARBIDE DRILL BIT",3.36,"Other",""],["SDSPSC-8-260","8 X 260MM SDS PLUS SOLID CARBIDE DRILL BIT",5.58,"Other",""],["SDSPSC-10-350","10 X 350MM SDS PLUS SOLID CARBIDE DRILL BIT",8.28,"Other",""],["SDSPSC-12-350","12 X 350MM SDS PLUS SOLID CARBIDE DRILL BIT",8.88,"Other",""],["HLSW-TCT-16","16MM TCT TIPPED HOLESAW INC. ARBOR",3.5,"TCT Holesaw",""],["HLSW-TCT-17","17MM TCT TIPPED HOLESAW INC. ARBOR",3.75,"TCT Holesaw",""],["HLSW-TCT-19","19MM TCT TIPPED HOLESAW INC. ARBOR",4.0,"TCT Holesaw",""],["HLSW-TCT-22","22MM TCT TIPPED HOLESAW INC. ARBOR",4.6,"TCT Holesaw",""],["HLSW-TCT-30","30MM TCT TIPPED HOLESAW INC. ARBOR",4.75,"TCT Holesaw",""],["HLSW-TCT-35","35MM TCT TIPPED HOLESAW INC. ARBOR",5.25,"TCT Holesaw",""],["HLSW-TCT-38","38MM TCT TIPPED HOLESAW INC. ARBOR",5.4,"TCT Holesaw",""],["HLSW-TCT-40","40MM TCT TIPPED HOLESAW INC. ARBOR",5.45,"TCT Holesaw",""],["HLSW-TCT-44","44MM TCT TIPPED HOLESAW INC. ARBOR",5.8,"TCT Holesaw",""],["HLSW-TCT-48","48MM TCT TIPPED HOLESAW INC. ARBOR",6.05,"TCT Holesaw",""],["HLSW-TCT-50","50MM TCT TIPPED HOLESAW INC. ARBOR",6.25,"TCT Holesaw",""],["HLSW-TCT-51","51MM TCT TIPPED HOLESAW INC. ARBOR",6.42,"TCT Holesaw",""],["HLSW-TCT-54","54MM TCT TIPPED HOLESAW INC. ARBOR",7.0,"TCT Holesaw",""],["HLSW-TCT-57","57MM TCT TIPPED HOLESAW INC. ARBOR",7.25,"TCT Holesaw",""],["HLSW-TCT-60","60MM TCT TIPPED HOLESAW INC. ARBOR",7.56,"TCT Holesaw",""],["HLSW-TCT-63","63MM TCT TIPPED HOLESAW INC. ARBOR",7.92,"TCT Holesaw",""],["HLSW-TCT-65","65MM TCT TIPPED HOLESAW INC. ARBOR",8.19,"TCT Holesaw",""],["HLSW-TCT-76","76MM TCT TIPPED HOLESAW INC. ARBOR",9.57,"TCT Holesaw",""],["HLSW-TCT-80","80MM TCT TIPPED HOLESAW INC. ARBOR",10.08,"TCT Holesaw",""],["HLSW-TCT-89","89MM TCT TIPPED HOLESAW INC. ARBOR",11.19,"TCT Holesaw",""],["HLSW-TCT-102","102MM TCT TIPPED HOLESAW INC. ARBOR",12.84,"TCT Holesaw",""],["HLSW-TCT-110","110MM TCT TIPPED HOLESAW INC. ARBOR",13.86,"TCT Holesaw",""],["HLSW-TCT-114","114MM TCT TIPPED HOLESAW INC. ARBOR",14.28,"TCT Holesaw",""],["HLSW-TCT-140","140MM TCT TIPPED HOLESAW INC. ARBOR",17.64,"TCT Holesaw",""],["HLSW-TCT-152","152MM TCT TIPPED HOLESAW INC. ARBOR",19.14,"TCT Holesaw",""],["CSB-350-ASP","350 X 20MM LASER WELDED ASPHALT CON SAW BLADE",60.0,"Diamond Blades",""],["WB-125-FK-MS","125 X 22.23MM FLAT KNOTTED MILD STEEL WIRE BRUSH",0.0,"Abrasives",""],["WB-200-WD","200MM WEEDING WIRE BRUSH",10.0,"Abrasives",""],["SCT-32A-415V-ST-5P","32AMP 220-415V EASY TWIST 5 HOLE SOCKET SCREW TYPE",7.0,"Electrical",""],["SDSM-CHZ-25-600","25 X 600MM SDS MAX CHISEL",8.0,"SDS Drill Bits",""],["SDSM-CHZ-50-600","50 X 600MM SDS MAX CHISEL",9.0,"SDS Drill Bits",""],["SDSM-CHZ-115-350","115 X 350MM SDS MAX TRIANGULAR CHISEL",16.0,"SDS Drill Bits",""],["SDSM-CHZ-50-300","50 X 300MM SDS MAX TILE CHISEL",8.7,"SDS Drill Bits",""],["SDSP-CHZ-75-250","75 X 250MM SDS PLUS CHISEL",6.6,"SDS Drill Bits",""],["SDSP-FLSCRP","235 X 98MM SDS PLUS FLOOR SCRAPER",13.0,"SDS Drill Bits",""],["SDSM-CHZ-18-600","18 X 600MM SDS MAX POINT CHISEL",8.0,"SDS Drill Bits",""],["PIPWR-36","36\" PIPE WRENCH",45.0,"Hand Tools",""],["DB-115-HPT-W","115 X 22.23MM SUPER THIN HOT PRESSED TURBO BLADE WHITE",11.57,"Diamond Blades",""],["DTB-115-M14-P","115 X M14 PORCELAIN CUTTING & GRINDING BLADE",15.0,"Diamond Blades",""],["CMBN-SPNR-24","24MM COMBINATION SPANNER",5.0,"Hand Tools",""],["CMBN-SPNR-27","27MM COMBINATION SPANNER",6.0,"Hand Tools",""],["CMBN-SPNR-30","30MM COMBINATION SPANNER",8.0,"Hand Tools",""],["CMBN-SPNR-32","32MM COMBINATION SPANNER",9.5,"Hand Tools",""],["CMBN-SPNR-36","36MM COMBINATION SPANNER",12.5,"Hand Tools",""],["CMBN-SPNR-41","41MM COMBINATION SPANNER",15.0,"Hand Tools",""],["CMBN-SPNR-50","50MM COMBINATION SPANNER",25.0,"Hand Tools",""],["NCT-150-30-30","150 X 30 X 30T NICKLE COBALT TIPPED SAW BLADE",8.99,"NCT Saw Blades",""],["NCT-160-20-40","160 X 20 X 40T NICKLE COBALT TIPPED SAW BLADE",9.5,"NCT Saw Blades",""],["NCT-165-20-36","165 X 20 X 36T NICKLE COBALT TIPPED SAW BLADE",9.5,"NCT Saw Blades",""],["NCT-165-20-48","165 X 20 X 48T NICKLE COBALT TIPPED SAW BLADE",10.5,"NCT Saw Blades",""],["NCT-184-30-18","184 X 30 X 18T NICKLE COBALT TIPPED SAW BLADE",9.35,"NCT Saw Blades",""],["NCT-184-30-36","184 X 30 X 36T NICKLE COBALT TIPPED SAW BLADE",11.0,"NCT Saw Blades",""],["NCT-184-30-40","184 X 30 X 40T NICKLE COBALT TIPPED SAW BLADE",11.5,"NCT Saw Blades",""],["NCT-184-30-48","184 X 30 X 48T NICKLE COBALT TIPPED SAW BLADE",12.0,"NCT Saw Blades",""],["NCT-190-30-48","190 X 30 X 48T NICKLE COBALT TIPPED SAW BLADE",12.0,"NCT Saw Blades",""],["NCT-210-30-40","210 X 30 X 40T NICKLE COBALT TIPPED SAW BLADE",21.75,"NCT Saw Blades",""],["NCT-210-30-60","210 X 30 X 60T NICKLE COBALT TIPPED SAW BLADE",22.85,"NCT Saw Blades",""],["NCT-216-30-48","216 X 30 X 48T NICKLE COBALT TIPPED SAW BLADE",21.66,"NCT Saw Blades",""],["NCT-254-30-80","254 X 30 X 80T NICKLE COBALT TIPPED SAW BLADE",36.0,"NCT Saw Blades",""],["NCT-305-30-72","305 X 30 X 72T NICKLE COBALT TIPPED SAW BLADE",40.62,"NCT Saw Blades",""],["NCT-305-30-96","305 X 30 X 96T NICKLE COBALT TIPPED SAW BLADE",41.5,"NCT Saw Blades",""],["NCT-230-30-24","230 X 30 X 24T NICKLE COBALT TIPPED SAW BLADE",19.04,"NCT Saw Blades",""],["NCT-230-30-36","230 X 30 X 36T NICKLE COBALT TIPPED SAW BLADE",23.48,"NCT Saw Blades",""],["NCT-230-30-48","230 X 30 X 48T NICKLE COBALT TIPPED SAW BLADE",27.29,"NCT Saw Blades",""],["EXTS-13","13PC EXTRACTOR SET",6.0,"Allen Keys",""],["CABE-110V-14M-1.5","16AMP 110V 14M X 1.5MM 3 CORE YELLOW ARCTIC EXT. CABLE",15.0,"Electrical",""],["FW-20-6-40","FLAP WHEEL 6MM SHANK 20X20MM 40G STAINLESS STEEL",0.5,"Flap Wheels",""],["FW-30-6-40","FLAP WHEEL 6MM SHANK 30X20MM 40G STAINLESS STEEL",0.58,"Flap Wheels",""],["FW-40-6-40","FLAP WHEEL 6MM SHANK 40X20MM 40G STAINLESS STEEL",0.65,"Flap Wheels",""],["FW-60-6-40","FLAP WHEEL 6MM SHANK 60X20MM 40G STAINLESS STEEL",0.9,"Flap Wheels",""],["FW-NW-6-30-40","NON-WOVEN FLAP WHEEL 6MM SHANK 30X25MM 40G STAINLESS STEEL",0.86,"Flap Wheels",""],["FW-NW-6-40-40","NON-WOVEN FLAP WHEEL 6MM SHANK 40X25MM 40G STAINLESS STEEL",0.94,"Flap Wheels",""],["FW-NW-6-50-40","NON-WOVEN FLAP WHEEL 6MM SHANK 50X25MM 40G STAINLESS STEEL",1.09,"Flap Wheels",""],["CB-C06","C06X18X6X60 CARBIDE BURR DOUBLE CUT CNC GROUND",6.5,"Carbide Burr",""],["CB-D10","D10X10.8X6X60 CARBIDE BURR DOUBLE CUT CNC GROUND",7.5,"Other",""],["CB-D06","D06X5X6X60 CARBIDE BURR DOUBLE CUT CNC GROUND",6.0,"Carbide Burr",""],["HLSW-TCT-70","70MM TCT TIPPED HOLESAW INC. ARBOR",9.15,"TCT Holesaw",""],["HSS-FGEL-5-245","5 X 245HSS FULLY GROUND EXTRA LONG SERIES DRILL BIT",2.4,"HSS Drill Bits",""],["CORE-TCT","9PC TCT CORE SET",35.0,"Miscellaneous",""],["HSS-CBB-3.3","3.3MM HSS COBALT DRILL BIT BULK",0.48,"HSS Drill Bits",""],["HTPS-40PC","40PC. TAP & DIE SET",35.0,"Hand Taps",""],["CHK-13-20-KL","13MM CAPACITY 1/2X20 KEYLESS CHUCK",7.0,"Chucks",""],["CSB-350-T","350 X 20MM TURBO LASER WELDED CONCRETE CON SAW BLADE",100.0,"Diamond Blades",""],["SDSP-5-260","5 X 260MM SDS PLUS DRILL BIT",1.7,"SDS Drill Bits",""],["SDSP-5-310","5 X 310MM SDS PLUS DRILL BIT",2.05,"SDS Drill Bits",""],["SDSP-5.5 x 260","5.5 X 260MM SDS PLUS DRILL BIT",1.75,"SDS Drill Bits",""],["SDB-230-TURBO","230 X 22.23MM SEGMENTED DIAMOND BLADE TURBO",25.0,"Diamond Blades",""],["MAG-50-T30-TORX","T30 X 50MM TORX MAGNETIC BIT PK. 10",6.0,"Magnetic Bits",""],["MAG-25-T30-TORX","T30 X 25MM TORX MAGNETIC BIT PK. 20",10.0,"Magnetic Bits",""],["WRNC-JUMBO","6PC JUMBO SPANNER SET 34-50MM",81.0,"Hand Tools",""],["CMBN-SPNR-8","8MM COMBINATION SPANNER",0.9,"Hand Tools",""],["CMBN-SPNR-10","10MM COMBINATION SPANNER",0.99,"Hand Tools",""],["CMBN-SPNR-12","12MM COMBINATION SPANNER",1.12,"Hand Tools",""],["CMBN-SPNR-13","13MM COMBINATION SPANNER",1.2,"Hand Tools",""],["CMBN-SPNR-14","14MM COMBINATION SPANNER",1.32,"Hand Tools",""],["CMBN-SPNR-15","15MM COMBINATION SPANNER",1.5,"Hand Tools",""],["CMBN-SPNR-17","17MM COMBINATION SPANNER",0.0,"Hand Tools",""],["CMBN-SPNR-18","18MM COMBINATION SPANNER",2.0,"Hand Tools",""],["CMBN-SPNR-19","19MM COMBINATION SPANNER",2.1,"Hand Tools",""],["CMBN-SPNR-20","20MM COMBINATION SPANNER",2.55,"Hand Tools",""],["22MM COMBINATION SPANNER","22MM COMBINATION SPANNER",2.9,"Hand Tools",""],["CMBN-SPNR-25","25MM COMBINATION SPANNER",5.2,"Hand Tools",""],["CMBN-SPNR-26","26MM COMBINATION SPANNER",5.8,"Hand Tools",""],["CMBN-SPNR-46","46MM COMBINATION SPANNER",22.0,"Hand Tools",""],["CMBN-SPNR-55","55MM COMBINATION SPANNER",38.0,"Hand Tools",""],["6pc-CSS","6PC COUNTERSINK SET",27.5,"Countersinks",""],["SCT-TRL-1G-32A","1 GANG TRAILING SOCKET 32A",7.5,"Electrical",""],["SCT-TRL-2G-32A","2 GANG TRAILING SOCKET 32A",8.7,"Electrical",""],["DB-115-HPT-G","115 X 22.23MM SUPER THIN HOT PRESSED TURBO BLADE GREEN",11.57,"Diamond Blades",""],["HLSW-TCT-14","14MM TCT TIPPED HOLESAW INC. ARBOR",6.0,"TCT Holesaw",""],["SDSP-22-600","22 X 600MM SDS PLUS DRILL BIT",31.0,"SDS Drill Bits",""],["SDSP-5.5-310","5.5 X 310MM SDS PLUS DRILL BIT",5.0,"SDS Drill Bits",""],["SDSP-11-210","11 X 210MM SDS PLUS DRILL BIT",4.4,"SDS Drill Bits",""],["SVFB-10","10\" STEEL VICE FIXED BASE",0.0,"Vices",""],["NCT-184-30-24","184 X 30 X 24T NICKLE COBALT TIPPED SAW BLADE",12.0,"NCT Saw Blades",""],["NCT-254-30-42","254 X 30 X 80T NICKLE COBALT TIPPED SAW BLADE",28.08,"NCT Saw Blades",""],["CMBN-SPNR-60","60MM COMBINATION SPANNER",40.23,"Hand Tools",""],["CMBN-SPNR-65","65MM COMBINATION SPANNER",44.0,"Hand Tools",""],["SDSP-22-1000","22 X 1000MM SDS PLUS DRILL BIT",22.0,"SDS Drill Bits",""],["SDSP-30-1000","30 x 1000MM SDS PLUS DRILL BIT",38.0,"SDS Drill Bits",""],["SDSP-6-310","6 X 310MM SDS PLUS DRILL BIT",2.9,"SDS Drill Bits",""],["SDSP-11-260","11 X 260MM SDS PLUS DRILL BIT",4.6,"SDS Drill Bits",""],["HTPW-M5-M20","M5-M20 HAND TAP WRENCH",8.5,"Hand Taps",""],["HTPR-M4-M12","M4-M12 RATCHET HAND TAP HANDLE",6.0,"Hand Taps",""]];
+
+    const VAT_RATE = 1.23;
+    const PAGE_SIZE = 60;
+    const SYNONYMS = [
+      ['sds+', 'sds plus'],
+      ['holesaw', 'hole saw'],
+      ['wirebrush', 'wire brush'],
+      ['sawblade', 'saw blade'],
+      ['rotabroach', 'rota broach'],
+      ['countersink', 'counter sink'],
+      ['multitool', 'multi tool'],
+      ['jigsaw', 'jig saw'],
+      ['allenkey', 'allen key'],
+      ['screwdriver', 'screw driver'],
+      ['s/s', 'stainless steel'],
+      ['ss', 'stainless steel'],
+      ['alu', 'aluminium'],
+      ['aluminum', 'aluminium']
+    ];
+
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+    function normalizeText(str) {
+      let s = (str || '').toLowerCase();
+      s = s.replace(/sds\s*\+/g, 'sds plus ');
+      // Separate X between numbers like 12x350 -> 12 x 350, 115x22.23 -> 115 x 22.23
+      s = s.replace(/(\d)\s*[x×*]\s*(\d)/gi, '$1 x $2');
+      // Add spaced forms for common joined/separated hardware terms
+      for (const [a, b] of SYNONYMS) {
+        if (s.includes(a)) s += ' ' + b;
+        if (s.includes(b)) s += ' ' + a;
+      }
+      return s;
+    }
+
+    function compactCode(code) {
+      return (code || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    // Build searchable index once on load (< 5ms for 1510 items)
+    const PRODUCTS = RAW_PRODUCTS.map((row, idx) => {
+      const code = row[0];
+      const desc = row[1];
+      const price = row[2];
+      const cat = row[3] || 'Other';
+      const barcode = row[4] || '';
+      const codeLower = code.toLowerCase();
+      const descLower = desc.toLowerCase();
+      const catLower = cat.toLowerCase();
+      const normDesc = normalizeText(desc + ' ' + cat);
+      // Extract pure number tokens for exact mm matching (e.g. "12 X 350MM" -> " 12 350 ")
+      const cleanTokensStr = normDesc
+        .replace(/(\d+(?:\.\d+)?)\s*mm\b/gi, '$1mm $1')
+        .replace(/[^a-z0-9./+"-]+/g, ' ');
+      const words = cleanTokensStr.trim().split(/\s+/).filter(Boolean);
+
+      return {
+        idx,
+        code,
+        desc,
+        price,
+        cat,
+        barcode,
+        codeLower,
+        codeCompact: compactCode(code),
+        descLower,
+        catLower,
+        searchBlob: codeLower + ' ' + compactCode(code) + ' ' + cleanTokensStr,
+        words
+      };
+    });
+
+    // Category stats
+    const catCounts = new Map();
+    for (const p of PRODUCTS) {
+      catCounts.set(p.cat, (catCounts.get(p.cat) || 0) + 1);
+    }
+    const allCategories = Array.from(catCounts.keys()).sort((a, b) => {
+      if (a === 'Other') return 1;
+      if (b === 'Other') return -1;
+      return collator.compare(a, b);
+    });
+    const topCategories = Array.from(catCounts.entries())
+      .filter(([name]) => name !== 'Other')
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name]) => name);
+
+    // State
+    let state = {
+      query: '',
+      category: '',
+      sort: 'relevance',
+      incVat: false,
+      visibleCount: PAGE_SIZE,
+      usedFuzzy: false
+    };
+
+    // Elements
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const categorySelect = document.getElementById('categorySelect');
+    const quickPills = document.getElementById('quickPills');
+    const sortSelect = document.getElementById('sortSelect');
+    const vatExBtn = document.getElementById('vatExBtn');
+    const vatIncBtn = document.getElementById('vatIncBtn');
+    const hintsBar = document.getElementById('hintsBar');
+    const resultCount = document.getElementById('resultCount');
+    const cardList = document.getElementById('cardList');
+    const tableWrap = document.getElementById('tableWrap');
+    const tableBody = document.getElementById('tableBody');
+    const emptyState = document.getElementById('emptyState');
+    const emptyMsg = document.getElementById('emptyMsg');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    const loadMoreWrap = document.getElementById('loadMoreWrap');
+    const fabTop = document.getElementById('fabTop');
+    const toast = document.getElementById('toast');
+
+    // Populate category dropdown & quick pills
+    function initCategories() {
+      for (const cat of allCategories) {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = `${cat} (${catCounts.get(cat)})`;
+        categorySelect.appendChild(opt);
+      }
+
+      const makePill = (label, value) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pill' + (state.category === value ? ' active' : '');
+        btn.textContent = label;
+        btn.dataset.cat = value;
+        btn.addEventListener('click', () => {
+          setCategory(value);
+        });
+        return btn;
+      };
+
+      quickPills.appendChild(makePill('All', ''));
+      for (const cat of topCategories) {
+        quickPills.appendChild(makePill(cat, cat));
+      }
+    }
+
+    function syncCategoryUI() {
+      categorySelect.value = state.category;
+      for (const btn of quickPills.querySelectorAll('.pill')) {
+        btn.classList.toggle('active', btn.dataset.cat === state.category);
+      }
+    }
+
+    function setCategory(cat) {
+      state.category = cat;
+      state.visibleCount = PAGE_SIZE;
+      syncCategoryUI();
+      syncUrl();
+      render();
+    }
+
+    // Parse query into smart tokens
+    function parseQuery(raw) {
+      let q = (raw || '').trim().toLowerCase();
+      if (!q) return { raw: '', tokens: [] };
+      q = q.replace(/sds\s*\+/g, 'sds plus ');
+      // Split 12x350 or 12*350 into "12 350", keep decimals like 12.5 and fractions like 1/2
+      q = q.replace(/(\d)\s*[x×*]\s*(\d)/gi, '$1 $2');
+      const rawTokens = q.split(/\s+/).filter(Boolean);
+      const tokens = rawTokens.map((t) => {
+        const mmMatch = t.match(/^(\d+(?:\.\d+)?)mm$/i);
+        if (mmMatch) {
+          return { raw: t, numOnly: mmMatch[1], compact: t.replace(/[^a-z0-9]/g, '') };
+        }
+        return { raw: t, numOnly: null, compact: t.replace(/[^a-z0-9]/g, '') };
+      });
+      return { raw: raw.trim().toLowerCase(), tokens };
+    }
+
+    function escapeRegExp(s) {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function escapeHtml(s) {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function tokenMatchesProduct(tok, p) {
+      if (tok.numOnly) {
+        // Match "12mm" OR standalone number "12" (e.g. "12 X 350MM") so 12mm does not match 125mm
+        const re = new RegExp(`(?:^|[^0-9.])${escapeRegExp(tok.numOnly)}(?:\\s*mm|[^0-9.]|$)`, 'i');
+        return re.test(p.descLower) || re.test(p.codeLower);
+      }
+      if (/^\d{6,}$/.test(tok.raw) && p.barcode && p.barcode.includes(tok.raw)) return true;
+      if (p.searchBlob.includes(tok.raw)) return true;
+      if (tok.compact && tok.compact.length >= 2 && p.codeCompact.includes(tok.compact)) return true;
+      // Check synonym expansions
+      for (const [a, b] of SYNONYMS) {
+        if (tok.raw === a && p.searchBlob.includes(b)) return true;
+      }
+      return false;
+    }
+
+    function levenshtein1OrLess(a, b) {
+      if (Math.abs(a.length - b.length) > 1) return false;
+      if (a === b) return true;
+      let i = 0, j = 0, edits = 0;
+      while (i < a.length && j < b.length) {
+        if (a[i] === b[j]) {
+          i++; j++;
+        } else {
+          edits++;
+          if (edits > 1) return false;
+          if (a.length > b.length) i++;
+          else if (b.length > a.length) j++;
+          else { i++; j++; }
+        }
+      }
+      if (i < a.length || j < b.length) edits++;
+      return edits <= 1;
+    }
+
+    function fuzzyTokenMatchesProduct(tok, p) {
+      if (tokenMatchesProduct(tok, p)) return true;
+      if (tok.raw.length < 4 || /^\d+$/.test(tok.raw)) return false;
+      for (const w of p.words) {
+        if (w.length >= 4 && levenshtein1OrLess(tok.raw, w)) return true;
+      }
+      return false;
+    }
+
+    function scoreProduct(p, parsed) {
+      if (!parsed.tokens.length) return 0;
+      let score = 0;
+      const qRaw = parsed.raw;
+      const qCompact = compactCode(qRaw);
+
+      if (p.codeLower === qRaw || (qCompact && p.codeCompact === qCompact)) {
+        score += 1200;
+      } else if (p.codeLower.startsWith(qRaw) || (qCompact && p.codeCompact.startsWith(qCompact))) {
+        score += 700;
+      } else if (p.codeLower.includes(qRaw)) {
+        score += 400;
+      }
+
+      if (p.descLower.includes(qRaw)) {
+        score += 350;
+      }
+
+      for (const tok of parsed.tokens) {
+        if (p.codeLower.includes(tok.raw)) score += 90;
+        if (tok.numOnly) {
+          const wb = new RegExp(`(?:^|[^0-9.])${escapeRegExp(tok.numOnly)}(?:mm|[^0-9.]|$)`, 'i');
+          if (wb.test(p.descLower)) score += 80;
+          if (wb.test(p.codeLower)) score += 70;
+        } else {
+          const wb = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(tok.raw)}(?:[^a-z0-9]|$)`, 'i');
+          if (wb.test(p.descLower)) score += 60;
+          else if (p.descLower.includes(tok.raw)) score += 30;
+          else if (p.catLower.includes(tok.raw)) score += 20;
+        }
+      }
+      return score;
+    }
+
+    function highlightText(text, tokens) {
+      if (!tokens || !tokens.length) return escapeHtml(text);
+      const terms = [];
+      for (const t of tokens) {
+        if (t.numOnly) {
+          terms.push(t.numOnly + '(?:\\s*mm)?');
+        } else if (t.raw.length >= 2) {
+          terms.push(escapeRegExp(t.raw));
+        } else if (/^\d$/.test(t.raw)) {
+          terms.push('(?<!\\d)' + escapeRegExp(t.raw) + '(?!\\d)');
+        }
+      }
+      if (!terms.length) return escapeHtml(text);
+      // Sort longest first to avoid partial match stealing
+      terms.sort((a, b) => b.length - a.length);
+      let re;
+      try {
+        re = new RegExp(`(${terms.join('|')})`, 'gi');
+      } catch {
+        return escapeHtml(text);
+      }
+
+      let out = '';
+      let lastIdx = 0;
+      let match;
+      while ((match = re.exec(text)) !== null) {
+        if (match.index > lastIdx) {
+          out += escapeHtml(text.slice(lastIdx, match.index));
+        }
+        out += '<mark>' + escapeHtml(match[0]) + '</mark>';
+        lastIdx = re.lastIndex;
+        if (match[0].length === 0) {
+          re.lastIndex++;
+        }
+      }
+      if (lastIdx < text.length) {
+        out += escapeHtml(text.slice(lastIdx));
+      }
+      return out;
+    }
+
+    function formatPrice(val) {
+      if (!val || val <= 0) return { text: 'POA', isPoa: true };
+      const finalVal = state.incVat ? val * VAT_RATE : val;
+      return { text: '€' + finalVal.toFixed(2), isPoa: false };
+    }
+
+    function filterAndSort() {
+      const parsed = parseQuery(state.query);
+      let pool = state.category
+        ? PRODUCTS.filter((p) => p.cat === state.category)
+        : PRODUCTS;
+
+      state.usedFuzzy = false;
+      let matched;
+
+      if (parsed.tokens.length > 0) {
+        matched = pool.filter((p) => parsed.tokens.every((t) => tokenMatchesProduct(t, p)));
+        if (matched.length === 0) {
+          const fuzzy = pool.filter((p) => parsed.tokens.every((t) => fuzzyTokenMatchesProduct(t, p)));
+          if (fuzzy.length > 0) {
+            matched = fuzzy;
+            state.usedFuzzy = true;
+          }
+        }
+      } else {
+        matched = pool.slice();
+      }
+
+      const sortMode = state.sort;
+      if (sortMode === 'relevance' && parsed.tokens.length > 0) {
+        const scores = new Map();
+        for (const p of matched) {
+          scores.set(p.idx, scoreProduct(p, parsed));
+        }
+        matched.sort((a, b) => {
+          const diff = scores.get(b.idx) - scores.get(a.idx);
+          if (diff !== 0) return diff;
+          return collator.compare(a.desc, b.desc);
+        });
+      } else if (sortMode === 'price-asc') {
+        matched.sort((a, b) => {
+          const pa = a.price > 0 ? a.price : Number.MAX_SAFE_INTEGER;
+          const pb = b.price > 0 ? b.price : Number.MAX_SAFE_INTEGER;
+          return pa - pb || collator.compare(a.desc, b.desc);
+        });
+      } else if (sortMode === 'price-desc') {
+        matched.sort((a, b) => b.price - a.price || collator.compare(a.desc, b.desc));
+      } else if (sortMode === 'code') {
+        matched.sort((a, b) => collator.compare(a.code, b.code));
+      } else {
+        // Default natural size/description order
+        matched.sort((a, b) => collator.compare(a.desc, b.desc));
+      }
+
+      return { matched, parsed };
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    function copyCode(code, btnEl) {
+      const done = () => {
+        if (btnEl) {
+          btnEl.classList.add('copied');
+          setTimeout(() => btnEl.classList.remove('copied'), 1200);
+        }
+        showToast(`Copied code: ${code}`);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done).catch(() => fallbackCopy(code, done));
+      } else {
+        fallbackCopy(code, done);
+      }
+    }
+
+    function fallbackCopy(text, cb) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch {}
+      document.body.removeChild(ta);
+      cb();
+    }
+
+    const COPY_SVG = `<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>`;
+
+    function render() {
+      const { matched, parsed } = filterAndSort();
+      const total = matched.length;
+      const showing = Math.min(total, state.visibleCount);
+      const vatLabel = state.incVat ? 'inc. VAT' : 'ex. VAT';
+
+      clearBtn.classList.toggle('visible', state.query.length > 0);
+      hintsBar.style.display = (state.query.length === 0 && !state.category) ? 'flex' : 'none';
+
+      // Status text
+      let countHtml = '';
+      if (total === PRODUCTS.length && !state.query && !state.category) {
+        countHtml = `Showing <strong>${showing.toLocaleString()}</strong> of <strong>${total.toLocaleString()}</strong> products`;
+      } else {
+        countHtml = `<strong>${total.toLocaleString()}</strong> ${total === 1 ? 'product' : 'products'} found`;
+        if (state.category) {
+          countHtml += ` in <strong>${escapeHtml(state.category)}</strong>`;
+        }
+        if (state.usedFuzzy) {
+          countHtml += `<span class="fuzzy-note">Closest match</span>`;
+        }
+      }
+      resultCount.innerHTML = countHtml;
+
+      if (total === 0) {
+        cardList.innerHTML = '';
+        tableBody.innerHTML = '';
+        tableWrap.style.display = 'none';
+        emptyState.style.display = 'block';
+        loadMoreWrap.style.display = 'none';
+        emptyMsg.textContent = state.category
+          ? `No products matched "${state.query}" inside ${state.category}. Try searching across all categories.`
+          : `No products matched "${state.query}". Try shorter words or just the size (e.g. "12mm" or "230").`;
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      tableWrap.style.display = '';
+
+      const slice = matched.slice(0, showing);
+      const tokens = parsed.tokens;
+
+      // Render mobile cards
+      const cardsHtml = [];
+      const rowsHtml = [];
+
+      for (const p of slice) {
+        const codeHtml = highlightText(p.code, tokens);
+        const descHtml = highlightText(p.desc, tokens);
+        const priceObj = formatPrice(p.price);
+        const priceHtml = priceObj.isPoa
+          ? `<span class="price-val poa">POA</span>`
+          : `<span class="price-val">${priceObj.text}</span><span class="price-vat">${vatLabel}</span>`;
+
+        cardsHtml.push(`
+          <article class="product-card">
+            <div class="card-top">
+              <button type="button" class="code-btn" data-code="${escapeHtml(p.code)}" title="Tap to copy product code">
+                <span>${codeHtml}</span>${COPY_SVG}
+              </button>
+              <div class="price-block">${priceHtml}</div>
+            </div>
+            <div class="card-desc">${descHtml}</div>
+          </article>
+        `);
+
+        rowsHtml.push(`
+          <tr>
+            <td class="col-code">
+              <button type="button" class="code-btn" data-code="${escapeHtml(p.code)}" title="Click to copy product code">
+                <span>${codeHtml}</span>${COPY_SVG}
+              </button>
+            </td>
+            <td class="col-desc">${descHtml}</td>
+            <td class="col-price num">
+              <div class="price-block">${priceHtml}</div>
+            </td>
+          </tr>
+        `);
+      }
+
+      cardList.innerHTML = cardsHtml.join('');
+      tableBody.innerHTML = rowsHtml.join('');
+
+      // Load more buttons
+      if (showing < total) {
+        const remaining = total - showing;
+        const nextBatch = Math.min(PAGE_SIZE, remaining);
+        loadMoreWrap.style.display = 'flex';
+        loadMoreWrap.innerHTML = `
+          <button type="button" id="loadMoreBtn" class="btn-secondary">
+            Show ${nextBatch} more (${remaining.toLocaleString()} remaining)
+          </button>
+          ${remaining <= 300 ? `<button type="button" id="showAllBtn" class="btn-secondary">Show all ${total.toLocaleString()}</button>` : ''}
+        `;
+        document.getElementById('loadMoreBtn').addEventListener('click', () => {
+          state.visibleCount += PAGE_SIZE;
+          render();
+        });
+        const showAllBtn = document.getElementById('showAllBtn');
+        if (showAllBtn) {
+          showAllBtn.addEventListener('click', () => {
+            state.visibleCount = total;
+            render();
+          });
+        }
+      } else {
+        loadMoreWrap.style.display = 'none';
+        loadMoreWrap.innerHTML = '';
+      }
+    }
+
+    function syncUrl() {
+      try {
+        const params = new URLSearchParams();
+        if (state.query) params.set('q', state.query);
+        if (state.category) params.set('cat', state.category);
+        if (state.incVat) params.set('vat', 'inc');
+        const qs = params.toString();
+        const newUrl = window.location.pathname + (qs ? '?' + qs : '');
+        window.history.replaceState(null, '', newUrl);
+      } catch {}
+    }
+
+    function readUrl() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const q = params.get('q') || '';
+        const cat = params.get('cat') || '';
+        const vat = params.get('vat') === 'inc';
+        if (q) {
+          state.query = q;
+          searchInput.value = q;
+        }
+        if (cat && catCounts.has(cat)) {
+          state.category = cat;
+        }
+        if (vat) {
+          state.incVat = true;
+          vatExBtn.setAttribute('aria-pressed', 'false');
+          vatIncBtn.setAttribute('aria-pressed', 'true');
+        }
+      } catch {}
+    }
+
+    // Event Listeners
+    searchInput.addEventListener('input', (e) => {
+      state.query = e.target.value;
+      state.visibleCount = PAGE_SIZE;
+      syncUrl();
+      render();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      state.query = '';
+      searchInput.value = '';
+      state.visibleCount = PAGE_SIZE;
+      syncUrl();
+      render();
+      searchInput.focus();
+    });
+
+    categorySelect.addEventListener('change', (e) => {
+      setCategory(e.target.value);
+    });
+
+    sortSelect.addEventListener('change', (e) => {
+      state.sort = e.target.value;
+      state.visibleCount = PAGE_SIZE;
+      render();
+    });
+
+    vatExBtn.addEventListener('click', () => {
+      state.incVat = false;
+      vatExBtn.setAttribute('aria-pressed', 'true');
+      vatIncBtn.setAttribute('aria-pressed', 'false');
+      syncUrl();
+      render();
+    });
+
+    vatIncBtn.addEventListener('click', () => {
+      state.incVat = true;
+      vatExBtn.setAttribute('aria-pressed', 'false');
+      vatIncBtn.setAttribute('aria-pressed', 'true');
+      syncUrl();
+      render();
+    });
+
+    hintsBar.addEventListener('click', (e) => {
+      const chip = e.target.closest('.hint-chip');
+      if (!chip) return;
+      state.query = chip.dataset.q || '';
+      searchInput.value = state.query;
+      state.visibleCount = PAGE_SIZE;
+      syncUrl();
+      render();
+    });
+
+    resetFiltersBtn.addEventListener('click', () => {
+      state.query = '';
+      state.category = '';
+      state.visibleCount = PAGE_SIZE;
+      searchInput.value = '';
+      syncCategoryUI();
+      syncUrl();
+      render();
+      searchInput.focus();
+    });
+
+    // Delegate click on copy code buttons
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.code-btn');
+      if (btn && btn.dataset.code) {
+        copyCode(btn.dataset.code, btn);
+      }
+    });
+
+    // Clickable desktop table headers to sort
+    document.querySelectorAll('.catalog-table thead th.sortable').forEach((th) => {
+      th.addEventListener('click', () => {
+        const targetSort = th.dataset.sort;
+        if (targetSort === 'price-asc' && state.sort === 'price-asc') {
+          state.sort = 'price-desc';
+        } else {
+          state.sort = targetSort;
+        }
+        sortSelect.value = state.sort;
+        render();
+      });
+    });
+
+    // Keyboard shortcuts: '/' focuses search, Escape clears
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput && document.activeElement.tagName !== 'SELECT') {
+        e.preventDefault();
+        searchInput.focus();
+      } else if (e.key === 'Escape' && document.activeElement === searchInput && state.query) {
+        clearBtn.click();
+      }
+    });
+
+    // Back-to-search FAB visibility
+    window.addEventListener('scroll', () => {
+      fabTop.classList.toggle('visible', window.scrollY > 360);
+    }, { passive: true });
+
+    fabTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => searchInput.focus(), 250);
+    });
+
+    // Init
+    initCategories();
+    readUrl();
+    syncCategoryUI();
+    render();
+  </script>
+</body>
+</html>
