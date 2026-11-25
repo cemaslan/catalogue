@@ -792,7 +792,7 @@
           autocorrect="off"
           autocapitalize="off"
           spellcheck="false"
-          placeholder='Search by product, size, or code (e.g. "12mm sds", "tct 230", "bp-115")'
+          placeholder='Search by size, tool, or code (e.g. "12x600", "biggest drill through bit", "bp-115")'
           aria-label="Search products by code, description, or size"
         />
         <button type="button" id="clearBtn" class="clear-btn" aria-label="Clear search" title="Clear search">
@@ -817,10 +817,10 @@
 
       <div id="hintsBar" class="hints-bar">
         <span>Quick try:</span>
-        <button type="button" class="hint-chip" data-q="12mm sds">12mm sds</button>
-        <button type="button" class="hint-chip" data-q="tct 230">tct 230</button>
-        <button type="button" class="hint-chip" data-q="holesaw">holesaw</button>
-        <button type="button" class="hint-chip" data-q="wire brush">wire brush</button>
+        <button type="button" class="hint-chip" data-q="12x600">12x600</button>
+        <button type="button" class="hint-chip" data-q="biggest drill through bit">biggest drill through bit</button>
+        <button type="button" class="hint-chip" data-q="mag drill 22">mag drill 22</button>
+        <button type="button" class="hint-chip" data-q="consaw 350">consaw 350</button>
         <button type="button" class="hint-chip" data-q="bp-115">bp-115</button>
       </div>
 
@@ -903,7 +903,10 @@
       ['blabe', 'blade'],
       ['vice', 'vise'],
       ['adaptor', 'adapter'],
-      ['fiber', 'fibre']
+      ['fiber', 'fibre'],
+      ['thru', 'through'],
+      ['bi-metal', 'bimetal'],
+      ['bi metal', 'bimetal']
     ];
 
     // Hardware Decision Model: maps customer intent words -> product terms & boosted categories
@@ -1012,7 +1015,11 @@
         .replace(/[^a-z0-9./+"-]+/g, ' ');
       const words = cleanTokensStr.trim().split(/\s+/).filter(Boolean);
       const dimNums = extractNumbers(descLower + ' ' + codeLower);
+      const dimList = Array.from(dimNums);
       const dimJoined = descLower.replace(/\s*[x×*]\s*/g, 'x').replace(/(\d)mmx/gi, '$1x');
+      const descNumSeq = (descLower.match(/\d+(?:\.\d+)?/g) || []).map(Number);
+      const primarySize = descNumSeq.length > 0 ? descNumSeq[0] : 0;
+      const maxDim = descNumSeq.length > 0 ? Math.max(...descNumSeq) : 0;
 
       return {
         idx,
@@ -1027,7 +1034,10 @@
         descLower,
         catLower,
         dimNums,
+        dimList,
         dimJoined,
+        primarySize,
+        maxDim,
         searchBlob: codeLower + ' ' + compactCode(code) + ' ' + cleanTokensStr,
         words
       };
@@ -1154,66 +1164,167 @@
       render();
     }
 
-    // Parse query into smart tokens + dimension pairs
+    // Parse query into smart tokens, dimension pairs, and decision modifiers
     function parseQuery(raw) {
-      let q = (raw || '').trim().toLowerCase();
-      if (!q) return { raw: '', tokens: [], dimPairs: [] };
+      const rawInput = raw || '';
+      const hasTrailingSpace = /\s$/.test(rawInput);
+      let q = rawInput.trim().toLowerCase();
+      if (!q) {
+        return {
+          raw: '',
+          tokens: [],
+          dimPairs: [],
+          sortIntent: null,
+          sortLabel: '',
+          stockFilter: null
+        };
+      }
 
       q = q.replace(/sds\s*\+/g, 'sds plus ');
       q = q.replace(/sds[\s-]+max/g, 'sds max ');
       q = q.replace(/sds[\s-]+plus/g, 'sds plus ');
 
-      const dimPairs = [];
-      // Detect explicit dimension expressions like 12x600, 12 x 600, 12mmx600mm, 12 by 600, 12-600
+      // Extract multi-word stock & price phrases
+      let stockFilter = null;
+      let sortIntent = null;
+      let sortLabel = '';
+
       let expanded = q;
+      if (/\bin[\s-]+stock\b|\binstock\b|\bavailable\b/.test(expanded)) {
+        stockFilter = 'in';
+        expanded = expanded.replace(/\bin[\s-]+stock\b|\binstock\b|\bavailable\b/g, ' ');
+      } else if (/\bout[\s-]+of[\s-]+stock\b|\boutofstock\b/.test(expanded)) {
+        stockFilter = 'out';
+        expanded = expanded.replace(/\bout[\s-]+of[\s-]+stock\b|\boutofstock\b/g, ' ');
+      }
+      if (/\bmost\s+expensive\b|\bhighest\s+price\b|\bpriciest\b|\bexpensive\b/.test(expanded)) {
+        sortIntent = 'price-desc';
+        sortLabel = 'Highest price first';
+        expanded = expanded.replace(/\bmost\s+expensive\b|\bhighest\s+price\b|\bpriciest\b|\bexpensive\b/g, ' ');
+      } else if (/\blowest\s+price\b|\bcheapest\b|\bbudget\b/.test(expanded)) {
+        sortIntent = 'price-asc';
+        sortLabel = 'Lowest price first';
+        expanded = expanded.replace(/\blowest\s+price\b|\bcheapest\b|\bbudget\b/g, ' ');
+      }
+
+      // Extract size superlative modifiers (careful not to steal "sds max")
+      if (/\b(biggest|largest|widest|heaviest)\b/.test(expanded) || (!/\bsds\s+max\b/.test(expanded) && /\bmax\b/.test(expanded))) {
+        sortIntent = 'size-desc';
+        sortLabel = 'Largest size first';
+        expanded = expanded.replace(/\b(biggest|largest|widest|heaviest)\b/g, ' ');
+        if (!/\bsds\s+max\b/.test(q)) expanded = expanded.replace(/\bmax\b/g, ' ');
+      } else if (/\b(longest|deepest)\b/.test(expanded)) {
+        sortIntent = 'len-desc';
+        sortLabel = 'Longest first';
+        expanded = expanded.replace(/\b(longest|deepest)\b/g, ' ');
+      } else if (/\b(smallest|tiniest|thinnest|narrowest)\b/.test(expanded)) {
+        sortIntent = 'size-asc';
+        sortLabel = 'Smallest size first';
+        expanded = expanded.replace(/\b(smallest|tiniest|thinnest|narrowest)\b/g, ' ');
+      } else if (/\bshortest\b/.test(expanded)) {
+        sortIntent = 'len-asc';
+        sortLabel = 'Shortest first';
+        expanded = expanded.replace(/\bshortest\b/g, ' ');
+      }
+
+      const dimPairs = [];
+      // Detect dimension expressions like 12x600, 12 x 6, 12mmx600mm, 12 by 600
       let prev;
       do {
         prev = expanded;
         expanded = expanded.replace(
           /(\d+(?:\.\d+)?)\s*(?:mm|"|in)?\s*(?:[x×*]|\bby\b)\s*(\d+(?:\.\d+)?)\s*(mm|"|in)?/gi,
-          (_, a, b, u2) => {
+          (_, a, b) => {
             dimPairs.push([a, b]);
-            return ` ~dim:${a} ~dim:${b} ` + (u2 && u2 !== 'mm' ? '' : '');
+            return ` ~dim:${a} ~dim:${b} `;
           }
         );
       } while (expanded !== prev);
 
-      // Also split pure numeric hyphen pairs like 12-600 or 12/600 (when not common small fractions like 5/16)
-      expanded = expanded.replace(/(?:^|\s)(\d{1,4})\s*[-]\s*(\d{2,4})(?=\s|$)/g, (_, a, b) => {
+      // Detect incomplete trailing dimension connector while typing: "12x", "12 x", "12mmx", "12*"
+      expanded = expanded.replace(/(\d+(?:\.\d+)?)\s*(?:mm|"|in)?\s*[x×*](?=\s|$)/gi, (_, a) => {
+        return ` ~dimx:${a} `;
+      });
+
+      // Split pure numeric hyphen pairs like 12-600
+      expanded = expanded.replace(/(?:^|\s)(\d{1,4})\s*[-]\s*(\d{1,4})(?=\s|$)/g, (_, a, b) => {
         dimPairs.push([a, b]);
         return ` ~dim:${a} ~dim:${b} `;
       });
 
-      const rawTokens = expanded.split(/\s+/).filter(Boolean);
+      const rawTokens = expanded.trim().split(/\s+/).filter(Boolean);
       const tokens = [];
-      for (const t of rawTokens) {
+      for (let i = 0; i < rawTokens.length; i++) {
+        const t = rawTokens[i];
+        const isLastAndTyping = (i === rawTokens.length - 1) && !hasTrailingSpace;
+
+        if (t.startsWith('~dimx:')) {
+          const num = t.slice(6);
+          tokens.push({
+            raw: num,
+            exactDim: num,
+            dimPrefix: null,
+            requireDimConnector: true,
+            numOnly: num,
+            compact: num,
+            isNumeric: true
+          });
+          continue;
+        }
         if (t.startsWith('~dim:')) {
           const num = t.slice(5);
-          tokens.push({ raw: num, exactDim: num, numOnly: num, compact: num, isNumeric: true });
+          // If this is the second part of a pair at the end while actively typing (e.g. "12x6" -> "6"), allow dim prefix ("6", "60", "600")
+          const allowPrefix = isLastAndTyping && dimPairs.length > 0 && dimPairs[dimPairs.length - 1][1] === num;
+          tokens.push({
+            raw: num,
+            exactDim: allowPrefix ? null : num,
+            dimPrefix: allowPrefix ? num : null,
+            requireDimConnector: false,
+            numOnly: num,
+            compact: num,
+            isNumeric: true
+          });
           continue;
         }
         const mmMatch = t.match(/^(\d+(?:\.\d+)?)mm$/i);
         if (mmMatch) {
-          tokens.push({ raw: t, exactDim: mmMatch[1], numOnly: mmMatch[1], compact: mmMatch[1], isNumeric: true });
+          tokens.push({
+            raw: t,
+            exactDim: mmMatch[1],
+            dimPrefix: null,
+            requireDimConnector: false,
+            numOnly: mmMatch[1],
+            compact: mmMatch[1],
+            isNumeric: true
+          });
           continue;
         }
         if (/^\d+(?:\.\d+)?$/.test(t)) {
-          tokens.push({ raw: t, exactDim: null, numOnly: t, compact: t, isNumeric: true });
+          tokens.push({
+            raw: t,
+            exactDim: null,
+            dimPrefix: null,
+            requireDimConnector: false,
+            numOnly: t,
+            compact: t,
+            isNumeric: true
+          });
           continue;
         }
         tokens.push({
           raw: t,
           exactDim: null,
+          dimPrefix: null,
+          requireDimConnector: false,
           numOnly: null,
           compact: t.replace(/[^a-z0-9]/g, ''),
           isNumeric: false
         });
       }
 
-      // Drop harmless English filler words if other meaningful tokens exist
       const meaningful = tokens.filter((t) => !STOP_WORDS.has(t.raw));
       const finalTokens = meaningful.length > 0 ? meaningful : tokens;
-      return { raw: q, tokens: finalTokens, dimPairs };
+      return { raw: q, tokens: finalTokens, dimPairs, sortIntent, sortLabel, stockFilter };
     }
 
     function escapeRegExp(s) {
@@ -1229,10 +1340,26 @@
     }
 
     function tokenMatchesProduct(tok, p, allowIntent = true) {
+      // Mid-typing "12x" -> match items starting/containing dimension 12 with an x/- connector (e.g. 12 X 600MM, SDSP-12-600)
+      if (tok.requireDimConnector) {
+        if (!p.dimNums.has(tok.exactDim)) return false;
+        return (
+          p.dimJoined.includes(tok.exactDim + 'x') ||
+          p.codeLower.includes(tok.exactDim + '-') ||
+          p.descLower.includes(tok.exactDim + ' x') ||
+          p.descLower.includes(tok.exactDim + 'mm x')
+        );
+      }
+
+      // Trailing partial dimension while typing "12x6" -> matches 12 x 6, 12 x 60, 12 x 600
+      if (tok.dimPrefix) {
+        if (p.dimNums.has(tok.dimPrefix)) return true;
+        return p.dimList.some((n) => n.startsWith(tok.dimPrefix));
+      }
+
       // Exact dimension match (from 12x600, 12 x 600, 12mm, 12-600) -> never matches 120 when searching 12
       if (tok.exactDim) {
         if (p.dimNums.has(tok.exactDim)) return true;
-        // Also allow e.g. "12" matching "12.0"
         if (tok.exactDim.includes('.') && p.descLower.includes(tok.exactDim)) return true;
         return false;
       }
@@ -1257,7 +1384,7 @@
         if (tok.raw === b && p.searchBlob.includes(a)) return true;
       }
 
-      // Hardware Decision Model intent rule (e.g. "concrete" -> SDS/Masonry, "mag" -> Rota Broach)
+      // Hardware Decision Model intent rule
       if (allowIntent) {
         const rule = INTENT_RULES[tok.raw];
         if (rule) {
@@ -1314,10 +1441,12 @@
         score += 450;
       }
 
-      // 2. Exact joined dimension pair boost (e.g. "12x600" strongly boosts "12 X 600MM" & "SDSP-12-600")
+      // 2. Exact joined dimension pair boost (e.g. "12x600" -> "12 X 600MM" & "SDSP-12-600")
       for (const [a, b] of parsed.dimPairs) {
         if (p.dimJoined.includes(`${a}x${b}`) || p.codeLower.includes(`${a}-${b}`)) {
-          score += 900;
+          score += 950;
+        } else if (p.dimJoined.includes(`${a}x${b}`) || p.dimJoined.includes(`${a}x`) && p.dimList.some((n) => n.startsWith(b))) {
+          score += 650;
         } else if (p.dimNums.has(a) && p.dimNums.has(b)) {
           score += 400;
         }
@@ -1333,15 +1462,15 @@
         if (tok.isNumeric) {
           const num = tok.numOnly || tok.raw;
           if (p.dimNums.has(num)) {
-            score += 320;
-            // Bonus if appears with mm or as standalone dimension (e.g. "14MM" over "M14")
+            score += 340;
             if (p.descLower.includes(num + 'mm') || p.descLower.includes(num + ' x ')) {
               score += 110;
             }
-            // Bonus if appears at very start of description (e.g. "12 X 600MM...")
             if (p.descLower.startsWith(num + ' ') || p.descLower.startsWith(num + 'mm')) {
               score += 120;
             }
+          } else if (tok.dimPrefix && p.dimList.some((n) => n.startsWith(tok.dimPrefix))) {
+            score += 180;
           } else if (p.descLower.includes(num) || p.codeLower.includes(num)) {
             score += 30;
           }
@@ -1373,7 +1502,9 @@
       if (!tokens || !tokens.length) return escapeHtml(text);
       const terms = [];
       for (const t of tokens) {
-        if (t.exactDim || t.isNumeric) {
+        if (t.dimPrefix) {
+          terms.push(`\\b${escapeRegExp(t.dimPrefix)}\\d*(?:\\s*mm)?\\b`);
+        } else if (t.exactDim || t.isNumeric) {
           const numEsc = escapeRegExp(t.exactDim || t.raw);
           terms.push(`\\b${numEsc}(?:\\s*mm)?\\b`);
         } else if (t.raw.length >= 2) {
@@ -1421,28 +1552,35 @@
     }
 
     function runSearchPool(pool, parsed) {
-      if (parsed.tokens.length === 0) {
-        return { items: pool.slice(), usedFuzzy: false };
+      let basePool = pool;
+      if (parsed.stockFilter === 'in') {
+        basePool = basePool.filter((p) => p.qty > 0);
+      } else if (parsed.stockFilter === 'out') {
+        basePool = basePool.filter((p) => p.qty <= 0);
       }
 
-      // Stage A: Strict Decision Match (all tokens match via exact dim/text/intent)
-      let matched = pool.filter((p) => parsed.tokens.every((t) => tokenMatchesProduct(t, p, true)));
+      if (parsed.tokens.length === 0) {
+        return { items: basePool.slice(), usedFuzzy: false };
+      }
+
+      // Stage A: Strict Decision Match
+      let matched = basePool.filter((p) => parsed.tokens.every((t) => tokenMatchesProduct(t, p, true)));
       if (matched.length > 0) {
         return { items: matched, usedFuzzy: false };
       }
 
       // Stage B: Fuzzy Typo Recovery
-      const fuzzy = pool.filter((p) => parsed.tokens.every((t) => fuzzyTokenMatchesProduct(t, p)));
+      const fuzzy = basePool.filter((p) => parsed.tokens.every((t) => fuzzyTokenMatchesProduct(t, p)));
       if (fuzzy.length > 0) {
         return { items: fuzzy, usedFuzzy: true };
       }
 
-      // Stage C: Partial Decision Fallback when user enters 3+ tokens (keep all exact dimensions, allow 1 missing word)
+      // Stage C: Partial Decision Fallback when user enters 3+ tokens
       if (parsed.tokens.length >= 3) {
         const dimTokens = parsed.tokens.filter((t) => t.isNumeric);
         const wordTokens = parsed.tokens.filter((t) => !t.isNumeric);
         if (wordTokens.length >= 2) {
-          const partial = pool.filter((p) => {
+          const partial = basePool.filter((p) => {
             if (!dimTokens.every((t) => tokenMatchesProduct(t, p, true))) return false;
             const hits = wordTokens.filter((t) => fuzzyTokenMatchesProduct(t, p)).length;
             return hits >= Math.max(1, wordTokens.length - 1);
@@ -1468,12 +1606,31 @@
 
       // If category filter yielded 0, check if matches exist across all categories
       let allCatCount = 0;
-      if (matched.length === 0 && state.category && parsed.tokens.length > 0) {
+      if (matched.length === 0 && state.category && (parsed.tokens.length > 0 || parsed.stockFilter)) {
         allCatCount = runSearchPool(PRODUCTS, parsed).items.length;
       }
 
-      const sortMode = state.sort;
-      if (sortMode === 'relevance' && parsed.tokens.length > 0) {
+      const effectiveSort = (state.sort === 'relevance' && parsed.sortIntent)
+        ? parsed.sortIntent
+        : state.sort;
+
+      if (effectiveSort === 'size-desc') {
+        matched.sort((a, b) => (b.primarySize - a.primarySize) || (b.maxDim - a.maxDim) || collator.compare(b.desc, a.desc));
+      } else if (effectiveSort === 'size-asc') {
+        matched.sort((a, b) => {
+          const sa = a.primarySize > 0 ? a.primarySize : Number.MAX_SAFE_INTEGER;
+          const sb = b.primarySize > 0 ? b.primarySize : Number.MAX_SAFE_INTEGER;
+          return (sa - sb) || (a.maxDim - b.maxDim) || collator.compare(a.desc, b.desc);
+        });
+      } else if (effectiveSort === 'len-desc') {
+        matched.sort((a, b) => (b.maxDim - a.maxDim) || (b.primarySize - a.primarySize) || collator.compare(b.desc, a.desc));
+      } else if (effectiveSort === 'len-asc') {
+        matched.sort((a, b) => {
+          const la = a.maxDim > 0 ? a.maxDim : Number.MAX_SAFE_INTEGER;
+          const lb = b.maxDim > 0 ? b.maxDim : Number.MAX_SAFE_INTEGER;
+          return (la - lb) || (a.primarySize - b.primarySize) || collator.compare(a.desc, b.desc);
+        });
+      } else if (effectiveSort === 'relevance' && parsed.tokens.length > 0) {
         const scores = new Map();
         for (const p of matched) {
           scores.set(p.idx, scoreProduct(p, parsed));
@@ -1483,19 +1640,19 @@
           if (diff !== 0) return diff;
           return collator.compare(a.desc, b.desc);
         });
-      } else if (sortMode === 'price-asc') {
+      } else if (effectiveSort === 'price-asc') {
         matched.sort((a, b) => {
           const pa = a.price > 0 ? a.price : Number.MAX_SAFE_INTEGER;
           const pb = b.price > 0 ? b.price : Number.MAX_SAFE_INTEGER;
           return pa - pb || collator.compare(a.desc, b.desc);
         });
-      } else if (sortMode === 'price-desc') {
+      } else if (effectiveSort === 'price-desc') {
         matched.sort((a, b) => b.price - a.price || collator.compare(a.desc, b.desc));
-      } else if (sortMode === 'qty-desc') {
+      } else if (effectiveSort === 'qty-desc') {
         matched.sort((a, b) => b.qty - a.qty || collator.compare(a.desc, b.desc));
-      } else if (sortMode === 'qty-asc') {
+      } else if (effectiveSort === 'qty-asc') {
         matched.sort((a, b) => a.qty - b.qty || collator.compare(a.desc, b.desc));
-      } else if (sortMode === 'code') {
+      } else if (effectiveSort === 'code') {
         matched.sort((a, b) => collator.compare(a.code, b.code));
       } else {
         // Default natural size/description order
@@ -1547,6 +1704,14 @@
         countHtml = `<strong>${total.toLocaleString()}</strong> ${total === 1 ? 'product' : 'products'} found`;
         if (state.category) {
           countHtml += ` in <strong>${escapeHtml(state.category)}</strong>`;
+        }
+        if (parsed.sortLabel && state.sort === 'relevance') {
+          countHtml += `<span class="fuzzy-note">${escapeHtml(parsed.sortLabel)}</span>`;
+        }
+        if (parsed.stockFilter === 'in') {
+          countHtml += `<span class="fuzzy-note">In stock only</span>`;
+        } else if (parsed.stockFilter === 'out') {
+          countHtml += `<span class="fuzzy-note">Out of stock only</span>`;
         }
         if (state.usedFuzzy) {
           countHtml += `<span class="fuzzy-note">Closest match</span>`;
