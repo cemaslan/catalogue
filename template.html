@@ -645,14 +645,6 @@
       white-space: nowrap;
     }
 
-    mark {
-      background: var(--mark-bg);
-      color: var(--mark-ink);
-      padding: 0 2px;
-      border-radius: 3px;
-      font-weight: 700;
-    }
-
     @media (min-width: 720px) {
       .card-list {
         display: none;
@@ -1511,53 +1503,6 @@
       return score;
     }
 
-    function highlightText(text, tokens) {
-      if (!tokens || !tokens.length) return escapeHtml(text);
-      const terms = [];
-      for (const t of tokens) {
-        if (t.dimPrefix) {
-          terms.push(`\\b${escapeRegExp(t.dimPrefix)}\\d*(?:\\s*mm)?\\b`);
-        } else if (t.exactDim || t.isNumeric) {
-          const numEsc = escapeRegExp(t.exactDim || t.raw);
-          terms.push(`\\b${numEsc}(?:\\s*mm)?\\b`);
-        } else if (t.raw.length >= 2) {
-          terms.push(escapeRegExp(t.raw));
-          const rule = INTENT_RULES[t.raw];
-          if (rule) {
-            for (const rt of rule.terms.slice(0, 3)) {
-              if (rt.length >= 3) terms.push(escapeRegExp(rt));
-            }
-          }
-        }
-      }
-      if (!terms.length) return escapeHtml(text);
-      terms.sort((a, b) => b.length - a.length);
-      let re;
-      try {
-        re = new RegExp(`(${terms.join('|')})`, 'gi');
-      } catch {
-        return escapeHtml(text);
-      }
-
-      let out = '';
-      let lastIdx = 0;
-      let match;
-      while ((match = re.exec(text)) !== null) {
-        if (match.index > lastIdx) {
-          out += escapeHtml(text.slice(lastIdx, match.index));
-        }
-        out += '<mark>' + escapeHtml(match[0]) + '</mark>';
-        lastIdx = re.lastIndex;
-        if (match[0].length === 0) {
-          re.lastIndex++;
-        }
-      }
-      if (lastIdx < text.length) {
-        out += escapeHtml(text.slice(lastIdx));
-      }
-      return out;
-    }
-
     function formatPrice(val) {
       if (!val || val <= 0) return { text: 'POA', isPoa: true };
       const finalVal = state.incVat ? val * VAT_RATE : val;
@@ -1755,15 +1700,14 @@
       tableWrap.style.display = '';
 
       const slice = matched.slice(0, showing);
-      const tokens = parsed.tokens;
 
       // Render mobile cards
       const cardsHtml = [];
       const rowsHtml = [];
 
       for (const p of slice) {
-        const codeHtml = highlightText(p.code, tokens);
-        const descHtml = highlightText(p.desc, tokens);
+        const codeHtml = escapeHtml(p.code);
+        const descHtml = escapeHtml(p.desc);
         const qtyObj = formatQty(p.qty);
         const priceObj = formatPrice(p.price);
         const priceHtml = priceObj.isPoa
