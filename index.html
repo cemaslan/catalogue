@@ -1337,8 +1337,8 @@
         if (/^\d+(?:\.\d+)?$/.test(t)) {
           tokens.push({
             raw: t,
-            exactDim: null,
-            dimPrefix: null,
+            exactDim: isLastAndTyping ? null : t,
+            dimPrefix: isLastAndTyping ? t : null,
             requireDimConnector: false,
             numOnly: t,
             compact: t,
@@ -1375,6 +1375,9 @@
     }
 
     function tokenMatchesProduct(tok, p, allowIntent = true) {
+      // Barcode match (6+ digits)
+      if (/^\d{6,}$/.test(tok.raw) && p.barcode && p.barcode.includes(tok.raw)) return true;
+
       // Mid-typing "12x" -> match items starting/containing dimension 12 with an x/- connector (e.g. 12 X 600MM, SDSP-12-600)
       if (tok.requireDimConnector) {
         if (!p.dimNums.has(tok.exactDim)) return false;
@@ -1386,23 +1389,20 @@
         );
       }
 
-      // Trailing partial dimension while typing "12x6" -> matches 12 x 6, 12 x 60, 12 x 600
+      // Trailing partial dimension while typing "12x6" or "14" (no space) -> matches 14, 14.5, 140 (not 114)
       if (tok.dimPrefix) {
         if (p.dimNums.has(tok.dimPrefix)) return true;
         return p.dimList.some((n) => n.startsWith(tok.dimPrefix));
       }
 
-      // Exact dimension match (from 12x600, 12 x 600, 12mm, 12-600) -> never matches 120 when searching 12
+      // Exact dimension match (from "14 ", "14 sds", 12x600, 12mm, 12-600) -> never matches 140 or 114
       if (tok.exactDim) {
         if (p.dimNums.has(tok.exactDim)) return true;
         if (tok.exactDim.includes('.') && p.descLower.includes(tok.exactDim)) return true;
         return false;
       }
 
-      // Barcode match (6+ digits)
-      if (/^\d{6,}$/.test(tok.raw) && p.barcode && p.barcode.includes(tok.raw)) return true;
-
-      // Plain number token (e.g. "12")
+      // Plain number fallback
       if (tok.isNumeric) {
         if (p.dimNums.has(tok.raw)) return true;
         if (p.descLower.includes(tok.raw) || p.codeLower.includes(tok.raw)) return true;
