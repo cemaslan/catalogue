@@ -1041,6 +1041,43 @@
       return nums;
     }
 
+    function extractMmNums(descLower) {
+      let s = descLower || '';
+      // Strip fractions and M-nut thread pitches (like M14X2) while keeping M12X25X70 carbide burrs
+      s = s.replace(/(\d+)\s+(\d+\/\d+)/g, ' ');
+      s = s.replace(/(^|[^0-9])(\d+\/\d+)(?=[^0-9]|$)/g, '$1 ');
+      s = s.replace(/\bm\d+\s*x\s*\d+(?!\s*x)/gi, ' ');
+      // Normalize glued mm like 6mmshaft or 2mmx10mm
+      s = s.replace(/(\d)mm/gi, '$1 mm ');
+
+      const nums = new Set();
+      let m;
+      const reMm = /(?:^|[^0-9.])(\d+(?:\.\d+)?)\s+mm(?=\s|$|[^a-z0-9])/gi;
+      while ((m = reMm.exec(s)) !== null) {
+        nums.add(m[1]);
+      }
+
+      // Metric dimension chains like "12 x 600mm", "2 x 0.4mm", "a12x25x70", "22 x 340 sds"
+      const reChain = /(?:^|[^0-9.])(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/gi;
+      while ((m = reChain.exec(s)) !== null) {
+        const a = m[1];
+        const b = m[2];
+        const tail = s.slice(m.index + m[0].length, m.index + m[0].length + 14);
+        if (/^\s*(?:piece|pc|unf|tpi|gang)\b/i.test(tail)) continue;
+        nums.add(a);
+        if (!/^t\b/i.test(tail)) {
+          nums.add(b);
+        }
+      }
+
+      for (const n of Array.from(nums)) {
+        if (!n.includes('.') && n.length > 1 && n.startsWith('0')) {
+          nums.add(String(Number(n)));
+        }
+      }
+      return nums;
+    }
+
     // Build searchable index once on load (< 5ms for 1510 items)
     const PRODUCTS = RAW_PRODUCTS.map((row, idx) => {
       const code = row[0];
@@ -1059,6 +1096,7 @@
       const words = cleanTokensStr.trim().split(/\s+/).filter(Boolean);
       const dimNums = extractNumbers(descLower + ' ' + codeLower);
       const dimList = Array.from(dimNums);
+      const mmNums = extractMmNums(descLower);
       const dimJoined = descLower.replace(/\s*[x×*]\s*/g, 'x').replace(/(\d)mmx/gi, '$1x');
       const descNumSeq = (descLower.match(/\d+(?:\.\d+)?/g) || []).map(Number);
       const primarySize = descNumSeq.length > 0 ? descNumSeq[0] : 0;
@@ -1078,6 +1116,7 @@
         catLower,
         dimNums,
         dimList,
+        mmNums,
         dimJoined,
         primarySize,
         maxDim,
@@ -1274,6 +1313,9 @@
       }
 
       const dimPairs = [];
+      // Normalize "1 mm" -> "1mm" so spaced mm queries behave identically to "1mm"
+      expanded = expanded.replace(/(\d+(?:\.\d+)?)\s+mm\b/gi, '$1mm');
+
       // Detect dimension expressions like 12x600, 12 x 6, 12mmx600mm, 12 by 600
       let prev;
       do {
@@ -1309,6 +1351,7 @@
           tokens.push({
             raw: num,
             exactDim: num,
+            exactMm: null,
             dimPrefix: null,
             requireDimConnector: true,
             numOnly: num,
@@ -1319,11 +1362,11 @@
         }
         if (t.startsWith('~dim:')) {
           const num = t.slice(5);
-          // If this is the second part of a pair at the end while actively typing (e.g. "12x6" -> "6"), allow dim prefix ("6", "60", "600")
           const allowPrefix = isLastAndTyping && dimPairs.length > 0 && dimPairs[dimPairs.length - 1][1] === num;
           tokens.push({
             raw: num,
             exactDim: allowPrefix ? null : num,
+            exactMm: null,
             dimPrefix: allowPrefix ? num : null,
             requireDimConnector: false,
             numOnly: num,
@@ -1337,6 +1380,7 @@
           tokens.push({
             raw: t,
             exactDim: mmMatch[1],
+            exactMm: mmMatch[1],
             dimPrefix: null,
             requireDimConnector: false,
             numOnly: mmMatch[1],
@@ -1349,6 +1393,7 @@
           tokens.push({
             raw: t,
             exactDim: isLastAndTyping ? null : t,
+            exactMm: null,
             dimPrefix: isLastAndTyping ? t : null,
             requireDimConnector: false,
             numOnly: t,
@@ -1360,6 +1405,7 @@
         tokens.push({
           raw: t,
           exactDim: null,
+          exactMm: null,
           dimPrefix: null,
           requireDimConnector: false,
           numOnly: null,
@@ -1389,7 +1435,12 @@
       // Barcode match (6+ digits)
       if (/^\d{6,}$/.test(tok.raw) && p.barcode && p.barcode.includes(tok.raw)) return true;
 
-      // Mid-typing "12x" -> match items starting/containing dimension 12 with an x/- connector (e.g. 12 X 600MM, SDSP-12-600)
+      // Explicit mm unit query (e.g. "1mm", "2mm", "3mm") -> only genuine millimeter dimensions
+      if (tok.exactMm) {
+        return p.mmNums.has(tok.exactMm);
+      }
+
+      // Mid-typing "12x" -> match items starting/containing dimension 12 with an x/- connector
       if (tok.requireDimConnector) {
         if (!p.dimNums.has(tok.exactDim)) return false;
         return (
@@ -1400,13 +1451,13 @@
         );
       }
 
-      // Trailing partial dimension while typing "12x6" or "14" (no space) -> matches 14, 14.5, 140 (not 114)
+      // Trailing partial dimension while typing "12x6" or "14" (no space)
       if (tok.dimPrefix) {
         if (p.dimNums.has(tok.dimPrefix)) return true;
         return p.dimList.some((n) => n.startsWith(tok.dimPrefix));
       }
 
-      // Exact dimension match (from "14 ", "14 sds", "8.5 ", 12x600, 12mm, 12-600) -> never matches 140, 114, or 18.5
+      // Exact dimension match (from "14 ", "14 sds", "8.5 ", 12x600, 12-600)
       if (tok.exactDim) {
         return p.dimNums.has(tok.exactDim);
       }
