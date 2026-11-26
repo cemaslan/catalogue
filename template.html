@@ -1695,7 +1695,7 @@
         const qSafe = escapeHtml(state.query.trim());
         const catSafe = escapeHtml(state.switchedFromCat);
         switchNotice.style.display = 'block';
-        switchNotice.innerHTML = `There are no "<strong>${qSafe}</strong>" found in <strong>${catSafe}</strong>. Switched to <strong>All</strong>. To see all items in <strong>${catSafe}</strong>, <button type="button" class="switch-notice-btn" data-restore-cat="${catSafe}">clear search</button>.`;
+        switchNotice.innerHTML = `There are no "<strong>${qSafe}</strong>" found in <strong>${catSafe}</strong>. To see all <strong>${catSafe}</strong> press <strong>X</strong> on searchbar.`;
       } else {
         switchNotice.style.display = 'none';
         switchNotice.textContent = '';
@@ -1854,7 +1854,11 @@
     // Event Listeners
     searchInput.addEventListener('input', (e) => {
       state.query = e.target.value;
-      if (!state.query.trim()) state.switchedFromCat = '';
+      if (!state.query.trim() && state.switchedFromCat) {
+        state.category = state.switchedFromCat;
+        state.switchedFromCat = '';
+        syncCategoryUI();
+      }
       state.visibleCount = PAGE_SIZE;
       syncUrl();
       render();
@@ -1862,7 +1866,11 @@
 
     clearBtn.addEventListener('click', () => {
       state.query = '';
-      state.switchedFromCat = '';
+      if (state.switchedFromCat) {
+        state.category = state.switchedFromCat;
+        state.switchedFromCat = '';
+        syncCategoryUI();
+      }
       searchInput.value = '';
       state.visibleCount = PAGE_SIZE;
       syncUrl();
@@ -1916,20 +1924,6 @@
       state.query = chip.dataset.q || '';
       searchInput.value = state.query;
       state.visibleCount = PAGE_SIZE;
-      syncUrl();
-      render();
-    });
-
-    switchNotice.addEventListener('click', (e) => {
-      const btn = e.target.closest('.switch-notice-btn');
-      if (!btn) return;
-      const prevCat = state.switchedFromCat;
-      state.query = '';
-      state.switchedFromCat = '';
-      state.category = prevCat;
-      state.visibleCount = PAGE_SIZE;
-      searchInput.value = '';
-      syncCategoryUI();
       syncUrl();
       render();
     });
