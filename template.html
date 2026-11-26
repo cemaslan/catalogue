@@ -778,9 +778,171 @@
     .fab-top.visible {
       display: inline-flex;
     }
+
+    /* Access Code Gate */
+    body.locked .topbar,
+    body.locked .search-dock,
+    body.locked .main,
+    body.locked .fab-top {
+      display: none !important;
+    }
+
+    body.no-price-access #priceToggle,
+    body.no-price-access #vatToggle {
+      display: none;
+    }
+
+    .switch-code-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--ink-secondary);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .switch-code-btn:hover {
+      border-color: var(--border-strong);
+      color: var(--ink);
+      background: var(--code-bg);
+    }
+
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-overlay.hidden {
+      display: none;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      box-shadow: var(--shadow-md);
+      text-align: center;
+    }
+
+    .auth-card .brand-mark {
+      margin: 0 auto 14px;
+      width: 46px;
+      height: 46px;
+      font-size: 16px;
+      border-radius: 12px;
+    }
+
+    .auth-card h2 {
+      margin: 0 0 6px;
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .auth-card p {
+      margin: 0 0 20px;
+      font-size: 14px;
+      color: var(--ink-muted);
+      line-height: 1.45;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .auth-input {
+      width: 100%;
+      height: 50px;
+      padding: 0 14px;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+      color: var(--ink);
+      background: var(--surface-subtle);
+      border: 2px solid var(--border-strong);
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .auth-input:focus {
+      border-color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+    }
+
+    .auth-submit {
+      width: 100%;
+      height: 48px;
+      border: none;
+      border-radius: 10px;
+      background: var(--ink);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .auth-submit:hover {
+      background: var(--accent-hover);
+    }
+
+    .auth-error {
+      margin: 4px 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #b91c1c;
+      min-height: 18px;
+    }
   </style>
 </head>
-<body>
+<body class="locked">
+  <div id="authOverlay" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="auth-card">
+      <div class="brand-mark" aria-hidden="true">EPT</div>
+      <h2 id="authTitle">__TITLE__</h2>
+      <p>Enter your access code to view the product catalogue.</p>
+      <form id="authForm" class="auth-form">
+        <input
+          id="authInput"
+          class="auth-input"
+          type="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="Access code"
+          aria-label="Access code"
+          required
+        />
+        <button type="submit" id="authSubmitBtn" class="auth-submit">Open Catalogue</button>
+        <div id="authError" class="auth-error" role="alert"></div>
+      </form>
+    </div>
+  </div>
+
   <header class="topbar">
     <div class="container">
       <div class="topbar-inner">
@@ -800,6 +962,7 @@
             <button type="button" class="vat-btn" id="vatExBtn" aria-pressed="true">Ex. VAT</button>
             <button type="button" class="vat-btn" id="vatIncBtn" aria-pressed="false">Inc. 23% VAT</button>
           </div>
+          <button type="button" id="switchCodeBtn" class="switch-code-btn">Switch Code</button>
         </div>
       </div>
     </div>
@@ -909,8 +1072,14 @@
   </button>
 
   <script>
-    // Embedded product catalog: [code, description, priceExVat, category, barcode, qtyInStock]
+    // Embedded product catalog (prices encrypted separately): [code, description, category, barcode, qtyInStock]
     const RAW_PRODUCTS = __PRODUCTS_JSON__;
+    const AUTH_SALT = '__AUTH_SALT__';
+    const VIEW_CODE_HASH = '__VIEW_HASH__';
+    const PRICE_CODE_HASH = '__PRICE_HASH__';
+    const ENCRYPTED_PRICES = '__ENCRYPTED_PRICES__';
+    const KEY_ROUNDS = 5000;
+    const ACCESS_STORAGE_KEY = 'ept_cat_access_v1';
 
     const VAT_RATE = 1.23;
     const PAGE_SIZE = 60;
@@ -1078,14 +1247,14 @@
       return nums;
     }
 
-    // Build searchable index once on load (< 5ms for 1510 items)
+    // Build searchable index once on load (< 5ms for 1510 items); prices stay 0 until unlocked with Price Code
     const PRODUCTS = RAW_PRODUCTS.map((row, idx) => {
       const code = row[0];
       const desc = row[1];
-      const price = row[2];
-      const cat = row[3] || 'Other';
-      const barcode = row[4] || '';
-      const qty = typeof row[5] === 'number' ? row[5] : 0;
+      const price = 0;
+      const cat = row[2] || 'Other';
+      const barcode = row[3] || '';
+      const qty = typeof row[4] === 'number' ? row[4] : 0;
       const codeLower = code.toLowerCase();
       const descLower = desc.toLowerCase();
       const catLower = cat.toLowerCase();
@@ -1148,13 +1317,20 @@
       switchedFromCat: '',
       sort: 'relevance',
       incVat: false,
-      showPrices: true,
+      showPrices: false,
+      priceAccess: false,
       visibleCount: PAGE_SIZE,
       usedFuzzy: false,
       categoriesExpanded: false
     };
 
     // Elements
+    const authOverlay = document.getElementById('authOverlay');
+    const authForm = document.getElementById('authForm');
+    const authInput = document.getElementById('authInput');
+    const authError = document.getElementById('authError');
+    const switchCodeBtn = document.getElementById('switchCodeBtn');
+    const subtitleEl = document.getElementById('subtitle');
     const searchInput = document.getElementById('searchInput');
     const clearBtn = document.getElementById('clearBtn');
     const catToggleBtn = document.getElementById('catToggleBtn');
@@ -1176,6 +1352,227 @@
     const resetFiltersBtn = document.getElementById('resetFiltersBtn');
     const loadMoreWrap = document.getElementById('loadMoreWrap');
     const fabTop = document.getElementById('fabTop');
+
+    // Pure-JS SHA-256 & 2-code decryption (works on HTTPS and file:// without crypto.subtle)
+    const SHA256_K = new Uint32Array([
+      0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+      0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+      0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+    ]);
+
+    function sha256Bytes(msg) {
+      const len = msg.length;
+      const bitLen = len * 8;
+      const paddedLen = Math.ceil((len + 9) / 64) * 64;
+      const buf = new Uint8Array(paddedLen);
+      buf.set(msg);
+      buf[len] = 0x80;
+      const dv = new DataView(buf.buffer);
+      dv.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000), false);
+      dv.setUint32(paddedLen - 4, bitLen >>> 0, false);
+
+      let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a;
+      let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
+      const w = new Uint32Array(64);
+
+      for (let i = 0; i < paddedLen; i += 64) {
+        for (let t = 0; t < 16; t++) {
+          w[t] = dv.getUint32(i + t * 4, false);
+        }
+        for (let t = 16; t < 64; t++) {
+          const s0 = ((w[t - 15] >>> 7) | (w[t - 15] << 25)) ^ ((w[t - 15] >>> 18) | (w[t - 15] << 14)) ^ (w[t - 15] >>> 3);
+          const s1 = ((w[t - 2] >>> 17) | (w[t - 2] << 15)) ^ ((w[t - 2] >>> 19) | (w[t - 2] << 13)) ^ (w[t - 2] >>> 10);
+          w[t] = (w[t - 16] + s0 + w[t - 7] + s1) >>> 0;
+        }
+        let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+        for (let t = 0; t < 64; t++) {
+          const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+          const ch = (e & f) ^ ((~e) & g);
+          const temp1 = (h + S1 + ch + SHA256_K[t] + w[t]) >>> 0;
+          const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+          const maj = (a & b) ^ (a & c) ^ (b & c);
+          const temp2 = (S0 + maj) >>> 0;
+          h = g; g = f; f = e; e = (d + temp1) >>> 0;
+          d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+        }
+        h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0;
+        h4 = (h4 + e) >>> 0; h5 = (h5 + f) >>> 0; h6 = (h6 + g) >>> 0; h7 = (h7 + h) >>> 0;
+      }
+
+      const out = new Uint8Array(32);
+      const outDv = new DataView(out.buffer);
+      outDv.setUint32(0, h0, false); outDv.setUint32(4, h1, false);
+      outDv.setUint32(8, h2, false); outDv.setUint32(12, h3, false);
+      outDv.setUint32(16, h4, false); outDv.setUint32(20, h5, false);
+      outDv.setUint32(24, h6, false); outDv.setUint32(28, h7, false);
+      return out;
+    }
+
+    const utf8Encoder = new TextEncoder();
+    const utf8Decoder = new TextDecoder();
+
+    function utf8Bytes(str) {
+      return utf8Encoder.encode(str);
+    }
+
+    function concatBytes(a, b) {
+      const out = new Uint8Array(a.length + b.length);
+      out.set(a, 0);
+      out.set(b, a.length);
+      return out;
+    }
+
+    function bytesToHex(bytes) {
+      let hex = '';
+      for (let i = 0; i < bytes.length; i++) {
+        hex += bytes[i].toString(16).padStart(2, '0');
+      }
+      return hex;
+    }
+
+    function hexToBytes(hex) {
+      const out = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < out.length; i++) {
+        out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+      }
+      return out;
+    }
+
+    function base64ToBytes(b64) {
+      const bin = atob(b64);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) {
+        out[i] = bin.charCodeAt(i);
+      }
+      return out;
+    }
+
+    function normalizeCode(code) {
+      return String(code || '').replace(/\s+/g, '').toUpperCase();
+    }
+
+    function deriveKey(salt, code) {
+      const norm = normalizeCode(code);
+      let h = sha256Bytes(utf8Bytes(salt + ':' + norm));
+      for (let i = 1; i < KEY_ROUNDS; i++) {
+        h = sha256Bytes(h);
+      }
+      return h;
+    }
+
+    function verifyKeyHash(keyBytes) {
+      return bytesToHex(sha256Bytes(concatBytes(utf8Bytes('VERIFY:'), keyBytes)));
+    }
+
+    function decryptPrices(keyBytes) {
+      const cipher = base64ToBytes(ENCRYPTED_PRICES);
+      const plain = new Uint8Array(cipher.length);
+      const idxBuf = new Uint8Array(4);
+      const idxDv = new DataView(idxBuf.buffer);
+      let blockIdx = 0;
+
+      for (let start = 0; start < cipher.length; start += 32) {
+        idxDv.setUint32(0, blockIdx++, false);
+        const stream = sha256Bytes(concatBytes(keyBytes, idxBuf));
+        const end = Math.min(start + 32, cipher.length);
+        for (let i = start; i < end; i++) {
+          plain[i] = cipher[i] ^ stream[i - start];
+        }
+      }
+
+      if (plain.length < 17) {
+        throw new Error('Corrupted price payload');
+      }
+
+      const mac = plain.slice(0, 16);
+      const body = plain.slice(16);
+      const expectedMac = sha256Bytes(concatBytes(utf8Bytes('MAC:'), body)).slice(0, 16);
+      for (let i = 0; i < 16; i++) {
+        if (mac[i] !== expectedMac[i]) {
+          throw new Error('Price decryption check failed');
+        }
+      }
+      return JSON.parse(utf8Decoder.decode(body));
+    }
+
+    function applyAccess(mode, keyBytes) {
+      if (mode === 'price') {
+        const prices = decryptPrices(keyBytes);
+        if (!Array.isArray(prices) || prices.length !== PRODUCTS.length) {
+          throw new Error('Unexpected price payload length');
+        }
+        for (let i = 0; i < PRODUCTS.length; i++) {
+          PRODUCTS[i].price = prices[i];
+        }
+        state.priceAccess = true;
+        let hideParam = false;
+        try {
+          hideParam = new URLSearchParams(window.location.search).get('prices') === 'hide';
+        } catch {}
+        state.showPrices = !hideParam;
+        document.body.classList.remove('no-price-access');
+        if (subtitleEl) {
+          subtitleEl.textContent = `${PRODUCTS.length.toLocaleString()} products · Prices in EUR`;
+        }
+      } else {
+        for (let i = 0; i < PRODUCTS.length; i++) {
+          PRODUCTS[i].price = 0;
+        }
+        state.priceAccess = false;
+        state.showPrices = false;
+        document.body.classList.add('no-price-access');
+        if (subtitleEl) {
+          subtitleEl.textContent = `${PRODUCTS.length.toLocaleString()} products`;
+        }
+      }
+      document.body.classList.remove('locked');
+      authOverlay.classList.add('hidden');
+      authError.textContent = '';
+    }
+
+    function lockCatalogue() {
+      try {
+        localStorage.removeItem(ACCESS_STORAGE_KEY);
+      } catch {}
+      for (let i = 0; i < PRODUCTS.length; i++) {
+        PRODUCTS[i].price = 0;
+      }
+      state.priceAccess = false;
+      state.showPrices = false;
+      document.body.classList.add('locked', 'no-price-access');
+      syncPriceUI();
+      authOverlay.classList.remove('hidden');
+      authInput.value = '';
+      authError.textContent = '';
+      setTimeout(() => authInput.focus(), 50);
+    }
+
+    function tryRestoreAccess() {
+      try {
+        const raw = localStorage.getItem(ACCESS_STORAGE_KEY);
+        if (!raw) return false;
+        const saved = JSON.parse(raw);
+        if (!saved || saved.salt !== AUTH_SALT || typeof saved.keyHex !== 'string') {
+          return false;
+        }
+        const keyBytes = hexToBytes(saved.keyHex);
+        const vHash = verifyKeyHash(keyBytes);
+        if (saved.mode === 'price' && vHash === PRICE_CODE_HASH) {
+          applyAccess('price', keyBytes);
+          return true;
+        }
+        if (saved.mode === 'view' && vHash === VIEW_CODE_HASH) {
+          applyAccess('view', keyBytes);
+          return true;
+        }
+      } catch {}
+      return false;
+    }
 
     function makeCategoryPill(label, value, count) {
       const btn = document.createElement('button');
@@ -1728,12 +2125,17 @@
     }
 
     function syncPriceUI() {
+      if (!state.priceAccess) {
+        state.showPrices = false;
+      }
+      document.body.classList.toggle('no-price-access', !state.priceAccess);
       document.body.classList.toggle('prices-hidden', !state.showPrices);
       priceShowBtn.setAttribute('aria-pressed', String(state.showPrices));
       priceHideBtn.setAttribute('aria-pressed', String(!state.showPrices));
       for (const opt of sortSelect.options) {
         if (opt.value === 'price-asc' || opt.value === 'price-desc') {
-          opt.disabled = !state.showPrices;
+          opt.disabled = !state.priceAccess || !state.showPrices;
+          opt.hidden = !state.priceAccess;
         }
       }
       if (!state.showPrices && (state.sort === 'price-asc' || state.sort === 'price-desc')) {
@@ -1879,7 +2281,7 @@
         if (state.query) params.set('q', state.query);
         if (state.category) params.set('cat', state.category);
         if (state.incVat) params.set('vat', 'inc');
-        if (!state.showPrices) params.set('prices', 'hide');
+        if (state.priceAccess && !state.showPrices) params.set('prices', 'hide');
         const qs = params.toString();
         const newUrl = window.location.pathname + (qs ? '?' + qs : '');
         window.history.replaceState(null, '', newUrl);
@@ -1950,6 +2352,7 @@
     });
 
     priceShowBtn.addEventListener('click', () => {
+      if (!state.priceAccess) return;
       state.showPrices = true;
       syncPriceUI();
       syncUrl();
@@ -2055,8 +2458,58 @@
       }
     }, { passive: true });
 
+    // Access code modal & Switch Code button
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const code = authInput.value;
+      if (!normalizeCode(code)) {
+        authError.textContent = 'Please enter an access code.';
+        authInput.focus();
+        return;
+      }
+      const keyBytes = deriveKey(AUTH_SALT, code);
+      const vHash = verifyKeyHash(keyBytes);
+      let mode = null;
+      if (vHash === PRICE_CODE_HASH) {
+        mode = 'price';
+      } else if (vHash === VIEW_CODE_HASH) {
+        mode = 'view';
+      }
+      if (!mode) {
+        authError.textContent = 'Invalid access code. Please check and try again.';
+        authInput.select();
+        return;
+      }
+      try {
+        applyAccess(mode, keyBytes);
+        try {
+          localStorage.setItem(ACCESS_STORAGE_KEY, JSON.stringify({
+            salt: AUTH_SALT,
+            mode,
+            keyHex: bytesToHex(keyBytes),
+          }));
+        } catch {}
+        syncPriceUI();
+        syncCategoryUI();
+        render();
+      } catch (err) {
+        authError.textContent = 'Could not unlock catalogue. Please try again.';
+      }
+    });
+
+    authInput.addEventListener('input', () => {
+      if (authError.textContent) {
+        authError.textContent = '';
+      }
+    });
+
+    switchCodeBtn.addEventListener('click', () => {
+      lockCatalogue();
+    });
+
     // Keyboard shortcuts: '/' focuses search, Escape clears
     document.addEventListener('keydown', (e) => {
+      if (document.body.classList.contains('locked')) return;
       if (e.key === '/' && document.activeElement !== searchInput && document.activeElement.tagName !== 'SELECT') {
         e.preventDefault();
         searchInput.focus();
@@ -2082,9 +2535,14 @@
     // Init
     initCategories();
     readUrl();
-    syncPriceUI();
-    syncCategoryUI();
-    render();
+    if (tryRestoreAccess()) {
+      syncPriceUI();
+      syncCategoryUI();
+      render();
+    } else {
+      syncPriceUI();
+      setTimeout(() => authInput.focus(), 50);
+    }
   </script>
 </body>
 </html>
