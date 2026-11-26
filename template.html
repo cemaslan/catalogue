@@ -438,7 +438,20 @@
       font-size: 13px;
       font-weight: 500;
       margin-bottom: 10px;
-      line-height: 1.4;
+      line-height: 1.45;
+    }
+
+    .switch-notice-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      padding: 0;
+      cursor: pointer;
     }
 
     .sort-wrap {
@@ -1679,8 +1692,10 @@
       hintsBar.style.display = (state.query.length === 0 && !state.category) ? 'flex' : 'none';
 
       if (state.switchedFromCat && state.query.trim()) {
+        const qSafe = escapeHtml(state.query.trim());
+        const catSafe = escapeHtml(state.switchedFromCat);
         switchNotice.style.display = 'block';
-        switchNotice.innerHTML = `There are no "<strong>${escapeHtml(state.query.trim())}</strong>" found in <strong>${escapeHtml(state.switchedFromCat)}</strong>. Switched to <strong>All</strong>.`;
+        switchNotice.innerHTML = `There are no "<strong>${qSafe}</strong>" found in <strong>${catSafe}</strong>. Switched to <strong>All</strong>. To see all items in <strong>${catSafe}</strong>, <button type="button" class="switch-notice-btn" data-restore-cat="${catSafe}">clear search</button>.`;
       } else {
         switchNotice.style.display = 'none';
         switchNotice.textContent = '';
@@ -1901,6 +1916,20 @@
       state.query = chip.dataset.q || '';
       searchInput.value = state.query;
       state.visibleCount = PAGE_SIZE;
+      syncUrl();
+      render();
+    });
+
+    switchNotice.addEventListener('click', (e) => {
+      const btn = e.target.closest('.switch-notice-btn');
+      if (!btn) return;
+      const prevCat = state.switchedFromCat;
+      state.query = '';
+      state.switchedFromCat = '';
+      state.category = prevCat;
+      state.visibleCount = PAGE_SIZE;
+      searchInput.value = '';
+      syncCategoryUI();
       syncUrl();
       render();
     });
