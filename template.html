@@ -1395,11 +1395,9 @@
         return p.dimList.some((n) => n.startsWith(tok.dimPrefix));
       }
 
-      // Exact dimension match (from "14 ", "14 sds", 12x600, 12mm, 12-600) -> never matches 140 or 114
+      // Exact dimension match (from "14 ", "14 sds", "8.5 ", 12x600, 12mm, 12-600) -> never matches 140, 114, or 18.5
       if (tok.exactDim) {
-        if (p.dimNums.has(tok.exactDim)) return true;
-        if (tok.exactDim.includes('.') && p.descLower.includes(tok.exactDim)) return true;
-        return false;
+        return p.dimNums.has(tok.exactDim);
       }
 
       // Plain number fallback
