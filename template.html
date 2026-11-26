@@ -1018,7 +1018,18 @@
 
     function extractNumbers(str) {
       const nums = new Set();
-      const matches = (str || '').match(/\d+(?:\.\d+)?/g);
+      let cleaned = str || '';
+      // Extract mixed fractions like "5 1/2" and simple fractions like "1/2" without splitting into 5, 1, 2
+      cleaned = cleaned.replace(/(\d+)\s+(\d+\/\d+)/g, (_, whole, frac) => {
+        nums.add(whole + ' ' + frac);
+        nums.add(frac);
+        return ' ';
+      });
+      cleaned = cleaned.replace(/(^|[^0-9])(\d+\/\d+)(?=[^0-9]|$)/g, (_, pre, frac) => {
+        nums.add(frac);
+        return pre + ' ';
+      });
+      const matches = cleaned.match(/\d+(?:\.\d+)?/g);
       if (matches) {
         for (const m of matches) {
           nums.add(m);
